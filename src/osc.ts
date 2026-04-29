@@ -95,14 +95,14 @@ export class LivefireOsc {
       // Trace iedere binnenkomende OSC-message naar Companion's log
       // zodat operators kunnen zien of de feedback-link daadwerkelijk
       // pakketten ontvangt.
-      this.opts.log?.('debug', `OSC in ← ${msg.address} ${JSON.stringify(args)}`)
+      this.opts.log?.('info', `OSC in ← ${msg.address} ${JSON.stringify(args)}`)
       this.opts.onMessage(msg.address, args)
     })
     // raw-data hook: vuurt zelfs als het pakket niet als geldige OSC
     // wordt geparsed. Handig om "wel UDP, geen OSC"-issues te zien.
     this.incoming.on('raw', (data: Buffer) => {
       this.opts.log?.(
-        'debug',
+        'info',
         `OSC in raw ${data.length} bytes`,
       )
     })
@@ -141,7 +141,7 @@ export class LivefireOsc {
     }
     try {
       this.outgoing.send({ address, args })
-      this.opts.log?.('debug', `OSC out → ${address} ${JSON.stringify(args)}`)
+      this.opts.log?.('info', `OSC out → ${address} ${JSON.stringify(args)}`)
     } catch (e) {
       this.opts.onStatus(
         InstanceStatus.UnknownWarning,
