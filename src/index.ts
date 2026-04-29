@@ -175,3 +175,5 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
 }
 
 runEntrypoint(LivefireInstance, [])
+
+export default LivefireInstance

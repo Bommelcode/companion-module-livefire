@@ -33,7 +33,7 @@ export class LivefireOsc {
       remotePort: this.opts.cmdPort,
       metadata: false,
     })
-    this.outgoing.on('error', (err) => {
+    this.outgoing.on('error', (err: Error) => {
       this.opts.onStatus(
         InstanceStatus.UnknownWarning,
         `OSC out error: ${err}`,
@@ -47,7 +47,7 @@ export class LivefireOsc {
       localPort: this.opts.feedbackPort,
       metadata: false,
     })
-    this.incoming.on('message', (msg) => {
+    this.incoming.on('message', (msg: { address: string; args: any[] }) => {
       const args = (msg.args || []).map((a: any) => {
         // osc lib wraps args as { type, value } when metadata=true; we
         // turned that off so args are raw values, but be defensive.
@@ -57,7 +57,7 @@ export class LivefireOsc {
       })
       this.opts.onMessage(msg.address, args)
     })
-    this.incoming.on('error', (err) => {
+    this.incoming.on('error', (err: Error) => {
       this.opts.onStatus(
         InstanceStatus.UnknownWarning,
         `OSC in error: ${err}`,
