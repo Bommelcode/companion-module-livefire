@@ -24,6 +24,14 @@ export function buildVariables(): CompanionVariableDefinition[] {
       name: 'Remaining time formatted (m:ss / s.s)',
     },
     {
+      variableId: 'remaining_min',
+      name: 'Remaining minutes (for split-display tile 1 of 3)',
+    },
+    {
+      variableId: 'remaining_sec',
+      name: 'Remaining seconds, zero-padded (for split-display tile 3 of 3)',
+    },
+    {
       variableId: 'remaining_label',
       name: 'Name of the cue driving the countdown (= now playing)',
     },
@@ -65,6 +73,13 @@ export function buildVariables(): CompanionVariableDefinition[] {
 
 export function applySnapshotToVariables(self: any): void {
   const remaining = Number(self.state.remaining ?? 0)
+  // Split-display values voor de drie-knops countdown-tile. Bij count-up
+  // (negatieve seconden, infinite-loop) zetten we een '+' op de min-tile
+  // zodat de operator ziet dat 'ie optelt.
+  const sign = remaining < 0 ? '+' : ''
+  const absSec = Math.abs(remaining)
+  const minutes = Math.floor(absSec / 60)
+  const seconds = Math.floor(absSec % 60)
   const values: Record<string, string | number> = {
     playhead: self.state.playhead,
     playhead_total: self.state.playheadTotal,
@@ -72,6 +87,8 @@ export function applySnapshotToVariables(self: any): void {
     active: self.state.active,
     remaining: remaining.toFixed(1),
     remaining_formatted: formatRemaining(remaining),
+    remaining_min: `${sign}${minutes}`,
+    remaining_sec: seconds.toString().padStart(2, '0'),
     remaining_label: self.state.remainingLabel,
     cuecount: self.state.cueCount,
     connected: self.state.connected ? 1 : 0,

@@ -120,6 +120,60 @@ export function buildPresets(): CompanionPresetDefinitions {
     ],
   }
 
+  // Drie-knops split-countdown: minutes | : | seconds. Sleep deze drie
+  // naast elkaar in de cuelist-bar voor een grote leesbare timer (font
+  // 'auto' = vult tot ~44pt op een lege Stream Deck-button) — handig
+  // tijdens shows waar de operator vanaf 2-3m moet kunnen aflezen.
+  const splitCountdownFeedback = [
+    {
+      feedbackId: 'countdown_active',
+      options: {},
+      style: {
+        bgcolor: combineRgb(60, 60, 30),
+        color: combineRgb(220, 130, 30),
+      },
+    },
+  ]
+  presets['remaining_split_min'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Countdown — minutes (split tile 1/3)',
+    style: {
+      text: '$(livefire:remaining_min)',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitCountdownFeedback,
+  }
+  presets['remaining_split_sep'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Countdown — colon (split tile 2/3)',
+    style: {
+      text: ':',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitCountdownFeedback,
+  }
+  presets['remaining_split_sec'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Countdown — seconds (split tile 3/3)',
+    style: {
+      text: '$(livefire:remaining_sec)',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitCountdownFeedback,
+  }
+
   presets['active_count'] = {
     type: 'button',
     category: 'Status',
