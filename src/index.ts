@@ -82,6 +82,10 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
         this.checkFeedbacks('is_connected')
         applySnapshotToVariables(this)
       },
+      // Forward osc-level traces naar Companion's instance log zodat
+      // operators in Settings → Log kunnen zien of buttons écht een
+      // OSC-message versturen.
+      log: (level, msg) => this.log(level, msg),
     })
     try {
       await this.osc.start()

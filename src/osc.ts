@@ -2,6 +2,12 @@
  * OSC client + server. Outgoing UDPPort sends commands to liveFire's
  * OSC-input. Incoming UDPPort listens for liveFire's feedback push and
  * dispatches to a callback.
+ *
+ * Belangrijk: `UDPPort.open()` is async — de socket is pas bind'd
+ * wanneer 't `ready`-event afgaat. Tot die tijd worden send()-calls
+ * stilletjes gedropt door de osc-library. We awaiten `ready` voor
+ * beide ports voordat start() resolved, zodat Companion pas op "OK"
+ * staat als we daadwerkelijk kunnen versturen.
  */
 import { InstanceStatus } from '@companion-module/base'
 import * as osc from 'osc'
@@ -12,12 +18,43 @@ export interface LivefireOscOptions {
   feedbackPort: number
   onMessage: (address: string, args: any[]) => void
   onStatus: (status: InstanceStatus, message?: string) => void
+  /** Optional logger — Companion's instance has a `.log(level, msg)` method
+   *  that surfaces in Settings → Log. We gebruiken 'm voor debug-traces
+   *  zodat operators in 't veld kunnen zien of er daadwerkelijk OSC
+   *  uitgaat. */
+  log?: (level: 'debug' | 'info' | 'warn' | 'error', msg: string) => void
+}
+
+const READY_TIMEOUT_MS = 2000
+
+function awaitReady(port: any): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let settled = false
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      reject(new Error(`UDP port did not become ready within ${READY_TIMEOUT_MS}ms`))
+    }, READY_TIMEOUT_MS)
+    port.once('ready', () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolve()
+    })
+    port.once('error', (err: Error) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      reject(err)
+    })
+  })
 }
 
 export class LivefireOsc {
   private opts: LivefireOscOptions
   private outgoing: osc.UDPPort | undefined
   private incoming: osc.UDPPort | undefined
+  private outgoingReady = false
 
   constructor(opts: LivefireOscOptions) {
     this.opts = opts
@@ -38,8 +75,8 @@ export class LivefireOsc {
         InstanceStatus.UnknownWarning,
         `OSC out error: ${err}`,
       )
+      this.opts.log?.('warn', `OSC out error: ${err}`)
     })
-    this.outgoing.open()
 
     // Incoming port — bound to feedbackPort, listens for liveFire pushes.
     this.incoming = new osc.UDPPort({
@@ -62,23 +99,48 @@ export class LivefireOsc {
         InstanceStatus.UnknownWarning,
         `OSC in error: ${err}`,
       )
+      this.opts.log?.('warn', `OSC in error: ${err}`)
     })
+
+    // Beide ports openen + wachten tot ze daadwerkelijk geboend zijn.
+    // Pas dán resolved start() — vóór die tijd faalt elke send()
+    // stilletjes omdat de udp4 socket nog niet bind() heeft afgerond.
+    const outgoingReady = awaitReady(this.outgoing)
+    const incomingReady = awaitReady(this.incoming)
+    this.outgoing.open()
     this.incoming.open()
+    await Promise.all([outgoingReady, incomingReady])
+    this.outgoingReady = true
+    this.opts.log?.(
+      'info',
+      `OSC link up: out → ${this.opts.host}:${this.opts.cmdPort}, ` +
+        `in ← :${this.opts.feedbackPort}`,
+    )
   }
 
   send(address: string, args: any[] = []): void {
-    if (!this.outgoing) return
+    if (!this.outgoing) {
+      this.opts.log?.('warn', `OSC send '${address}' skipped: outgoing not initialised`)
+      return
+    }
+    if (!this.outgoingReady) {
+      this.opts.log?.('warn', `OSC send '${address}' skipped: outgoing not ready yet`)
+      return
+    }
     try {
       this.outgoing.send({ address, args })
+      this.opts.log?.('debug', `OSC out → ${address} ${JSON.stringify(args)}`)
     } catch (e) {
       this.opts.onStatus(
         InstanceStatus.UnknownWarning,
         `OSC send failed: ${e}`,
       )
+      this.opts.log?.('warn', `OSC send '${address}' failed: ${e}`)
     }
   }
 
   shutdown(): void {
+    this.outgoingReady = false
     try {
       this.outgoing?.close()
     } catch {
