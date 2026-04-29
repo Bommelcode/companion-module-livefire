@@ -1,6 +1,6 @@
 {
   "name": "companion-module-livefire",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Bitfocus Companion module for liveFire — cue-based playback for live events",
   "main": "dist/index.js",
   "scripts": {

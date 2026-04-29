@@ -192,11 +192,11 @@ export function buildPresets(): CompanionPresetDefinitions {
       category: 'Fire by number',
       name: `Fire cue ${n}`,
       style: {
-        // Cue-naam wordt automatisch ingevuld zodra liveFire de naam
-        // pusht via /livefire/cue/<n>/name; tot dat moment toont de
-        // tile alleen het nummer.
-        text: `${n}\\n$(livefire:cue_${n}_name)`,
-        size: '14',
+        // Volledige cue-naam, font auto-fit zodat 'ie de hele button
+        // vult. Geen nummer-prefix — als de slot leeg is (cue bestaat
+        // niet) blijft de button leeg, zichtbaar als ongebruikte slot.
+        text: `$(livefire:cue_${n}_name)`,
+        size: 'auto',
         bgcolor: COLORS.fire.bg,
         color: COLORS.fire.fg,
       },
@@ -227,8 +227,11 @@ export function buildPresets(): CompanionPresetDefinitions {
       category: 'Fire by bank',
       name: `Bank slot ${i}`,
       style: {
-        text: `$(livefire:fire_bank_${i})\\n$(livefire:fire_bank_${i}_name)`,
-        size: '14',
+        // Alleen de naam, auto-gefit op de button. Nummer haalt de
+        // bank-positie uit fire_bank_${i} maar wordt niet getoond —
+        // operator weet welke slot 'ie indrukt op basis van positie.
+        text: `$(livefire:fire_bank_${i}_name)`,
+        size: 'auto',
         bgcolor: COLORS.fire.bg,
         color: COLORS.fire.fg,
       },
