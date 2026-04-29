@@ -25,20 +25,15 @@ import { buildVariables, applySnapshotToVariables } from './variables'
 import { buildPresets } from './presets'
 
 export interface LivefireConfig {
-  /** liveFire host (where the app is running). */
   host: string
-  /** liveFire OSC-input port — that's where we send commands. */
   cmdPort: number
-  /** Local UDP port we bind to receive liveFire's feedback push.
-   *  Must match the "Port" liveFire sends feedback to in its
-   *  Preferences → Companion section. Default 12321. */
   feedbackPort: number
 }
 
 class LivefireInstance extends InstanceBase<LivefireConfig> {
   public osc: LivefireOsc | undefined
 
-  /** Last-seen transport snapshot — drives Companion variables. */
+  /** Last-seen transport snapshot — drives Companion variables + feedbacks. */
   public state = {
     playhead: 0,
     playheadTotal: 0,
@@ -47,13 +42,16 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     remaining: 0,
     remainingLabel: '',
     countdownActive: false,
-    /** Map cue_number → state ("idle"/"running"/"finished"). */
     cueStates: new Map<string, string>(),
-    /** Map cue_number → name. */
     cueNames: new Map<string, string>(),
-    /** Map cue_number → cue type (Audio / Video / ...). */
     cueTypes: new Map<string, string>(),
     cueCount: 0,
+    /** True wanneer de OSC-link met liveFire actief is. Drives the
+     *  is_connected feedback en de connection_status preset. */
+    connected: false,
+    /** Operator-controlled fire-bank offset. 0 = bank slots 1..16 mapping
+     *  naar cues 1..16; 16 = slots → 17..32; etc. */
+    fireBankOffset: 0,
   }
 
   async init(config: LivefireConfig): Promise<void> {
@@ -68,6 +66,7 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
   async destroy(): Promise<void> {
     this.osc?.shutdown()
     this.osc = undefined
+    this.state.connected = false
   }
 
   async configUpdated(config: LivefireConfig): Promise<void> {
@@ -77,14 +76,33 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       cmdPort: Number(config.cmdPort) || 53000,
       feedbackPort: Number(config.feedbackPort) || 12321,
       onMessage: (addr, args) => this.handleIncoming(addr, args),
-      onStatus: (status, msg) => this.updateStatus(status, msg),
+      onStatus: (status, msg) => {
+        this.updateStatus(status, msg)
+        this.state.connected = status === InstanceStatus.Ok
+        this.checkFeedbacks('is_connected')
+        applySnapshotToVariables(this)
+      },
     })
     try {
       await this.osc.start()
       this.updateStatus(InstanceStatus.Ok)
+      this.state.connected = true
     } catch (e) {
       this.updateStatus(InstanceStatus.ConnectionFailure, String(e))
+      this.state.connected = false
     }
+    this.checkFeedbacks('is_connected')
+    applySnapshotToVariables(this)
+  }
+
+  /** Action-handler voor 'set_fire_bank_offset'. Direct in de instance
+   *  zodat presets én custom triggers er gebruik van kunnen maken. */
+  setFireBankOffset(offset: number): void {
+    const clamped = Math.max(0, Math.floor(Number(offset) || 0))
+    if (clamped === this.state.fireBankOffset) return
+    this.state.fireBankOffset = clamped
+    applySnapshotToVariables(this)
+    this.checkFeedbacks('fire_bank_at', 'cue_state')
   }
 
   getConfigFields(): SomeCompanionConfigField[] {
@@ -162,6 +180,9 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
         this.checkFeedbacks('cue_state')
       } else if (field === 'name') {
         this.state.cueNames.set(cueNumber, value)
+        // Een naam-update kan een cue_<n>_name én een fire_bank_<i>_name
+        // raken (als deze cue binnen de huidige bank-range valt). De
+        // `applySnapshotToVariables` hieronder herberekent beide series.
       } else if (field === 'type') {
         this.state.cueTypes.set(cueNumber, value)
       }
@@ -169,7 +190,7 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       return
     }
     applySnapshotToVariables(this)
-    // Refresh feedbacks that depend on transport-level state.
+    // Refresh feedbacks die afhangen van transport-level state.
     this.checkFeedbacks('countdown_active', 'has_active', 'playhead_at')
   }
 }

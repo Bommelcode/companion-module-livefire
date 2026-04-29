@@ -1,15 +1,14 @@
 /**
- * Companion presets — kant-en-klare button-layouts die de operator
- * van het Companion-paneel naar een Stream Deck-pagina kan slepen.
+ * Companion presets — kant-en-klare button-layouts.
  *
- * Vier categorieën:
- *  - Transport (GO, Stop All, Next, Prev)
- *  - Status display (remaining-time, active-count)
- *  - Quick-fire 1..16 (toetst /livefire/fire/N) — een 4×4 of 8×2 raster
- *    dat operator met cue-numbers in liveFire matcht.
- *
- * Stream Deck-friendly kleuren: GO groen, Stop rood, info-tegels donker
- * met witte tekst.
+ * Categorieen:
+ *  - Transport      — GO / Stop All / Playhead next/prev
+ *  - Status         — countdown, active count, playhead, NOW PLAYING,
+ *                     connection-status indicator
+ *  - Fire by number — vaste 1..16 quick-fire (cue-naam op de knop,
+ *                     groen als die speelt)
+ *  - Fire by bank   — 1..16 bank-aware quick-fire die meeschuift met
+ *                     `fire_bank_offset`; plus drie bank-switch-knoppen
  */
 import {
   combineRgb,
@@ -23,27 +22,23 @@ const COLORS = {
   info: { bg: combineRgb(35, 35, 35), fg: combineRgb(225, 225, 225) },
   fire: { bg: combineRgb(60, 162, 230), fg: combineRgb(255, 255, 255) },
   fireRunning: { bg: combineRgb(60, 160, 60), fg: combineRgb(255, 255, 255) },
+  bank: { bg: combineRgb(80, 50, 130), fg: combineRgb(255, 255, 255) },
+  bankActive: { bg: combineRgb(220, 130, 30), fg: combineRgb(0, 0, 0) },
+  connected: { bg: combineRgb(40, 120, 40), fg: combineRgb(255, 255, 255) },
+  disconnected: { bg: combineRgb(160, 40, 40), fg: combineRgb(255, 255, 255) },
 }
 
 export function buildPresets(): CompanionPresetDefinitions {
   const presets: CompanionPresetDefinitions = {}
 
+  // ---- Transport --------------------------------------------------------
+
   presets['go'] = {
     type: 'button',
     category: 'Transport',
     name: 'GO',
-    style: {
-      text: 'GO',
-      size: '24',
-      bgcolor: COLORS.go.bg,
-      color: COLORS.go.fg,
-    },
-    steps: [
-      {
-        down: [{ actionId: 'go', options: {} }],
-        up: [],
-      },
-    ],
+    style: { text: 'GO', size: '24', bgcolor: COLORS.go.bg, color: COLORS.go.fg },
+    steps: [{ down: [{ actionId: 'go', options: {} }], up: [] }],
     feedbacks: [],
   }
 
@@ -51,18 +46,8 @@ export function buildPresets(): CompanionPresetDefinitions {
     type: 'button',
     category: 'Transport',
     name: 'Stop All',
-    style: {
-      text: 'STOP\\nALL',
-      size: '14',
-      bgcolor: COLORS.stop.bg,
-      color: COLORS.stop.fg,
-    },
-    steps: [
-      {
-        down: [{ actionId: 'stop_all', options: {} }],
-        up: [],
-      },
-    ],
+    style: { text: 'STOP\\nALL', size: '14', bgcolor: COLORS.stop.bg, color: COLORS.stop.fg },
+    steps: [{ down: [{ actionId: 'stop_all', options: {} }], up: [] }],
     feedbacks: [],
   }
 
@@ -70,18 +55,8 @@ export function buildPresets(): CompanionPresetDefinitions {
     type: 'button',
     category: 'Transport',
     name: 'Playhead next',
-    style: {
-      text: 'NEXT\\n▼',
-      size: '14',
-      bgcolor: COLORS.nav.bg,
-      color: COLORS.nav.fg,
-    },
-    steps: [
-      {
-        down: [{ actionId: 'playhead_next', options: {} }],
-        up: [],
-      },
-    ],
+    style: { text: 'NEXT\\n▼', size: '14', bgcolor: COLORS.nav.bg, color: COLORS.nav.fg },
+    steps: [{ down: [{ actionId: 'playhead_next', options: {} }], up: [] }],
     feedbacks: [],
   }
 
@@ -89,28 +64,46 @@ export function buildPresets(): CompanionPresetDefinitions {
     type: 'button',
     category: 'Transport',
     name: 'Playhead prev',
+    style: { text: 'PREV\\n▲', size: '14', bgcolor: COLORS.nav.bg, color: COLORS.nav.fg },
+    steps: [{ down: [{ actionId: 'playhead_prev', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  // ---- Status -----------------------------------------------------------
+
+  presets['now_playing'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Now playing (name + countdown)',
     style: {
-      text: 'PREV\\n▲',
+      // Twee regels: naam van de cue die de countdown drijft + de
+      // resterende tijd. has_active-feedback laat hem groen lichten als
+      // er iets speelt.
+      text: '$(livefire:remaining_label)\\n$(livefire:remaining_formatted)',
       size: '14',
-      bgcolor: COLORS.nav.bg,
-      color: COLORS.nav.fg,
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
     },
-    steps: [
+    steps: [{ down: [], up: [] }],
+    feedbacks: [
       {
-        down: [{ actionId: 'playhead_prev', options: {} }],
-        up: [],
+        feedbackId: 'has_active',
+        options: {},
+        style: {
+          bgcolor: combineRgb(40, 100, 60),
+          color: combineRgb(255, 255, 255),
+        },
       },
     ],
-    feedbacks: [],
   }
 
   presets['remaining'] = {
     type: 'button',
     category: 'Status',
-    name: 'Remaining time',
+    name: 'Remaining time only',
     style: {
       text: '$(livefire:remaining_formatted)',
-      size: '18',
+      size: '24',
       bgcolor: COLORS.info.bg,
       color: COLORS.info.fg,
     },
@@ -164,16 +157,77 @@ export function buildPresets(): CompanionPresetDefinitions {
     feedbacks: [],
   }
 
-  // Quick-fire 1..16 — Stream Deck XL fits these on one page; smaller
-  // decks will paginate. Buttons light up green when their cue is
-  // running, blue otherwise.
+  presets['connection_status'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'liveFire connection status',
+    style: {
+      // Default = disconnected; is_connected-feedback overrides naar
+      // connected-styling. Zo zie je in een oogopslag of de OSC-link
+      // staat — onmisbaar bij showstart.
+      text: 'liveFire\\nOFFLINE',
+      size: '14',
+      bgcolor: COLORS.disconnected.bg,
+      color: COLORS.disconnected.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'is_connected',
+        options: {},
+        style: {
+          text: 'liveFire\\nLIVE',
+          bgcolor: COLORS.connected.bg,
+          color: COLORS.connected.fg,
+        },
+      },
+    ],
+  }
+
+  // ---- Fire by number (vaste 1..16) ------------------------------------
+
   for (let n = 1; n <= 16; n++) {
     presets[`fire_${n}`] = {
       type: 'button',
       category: 'Fire by number',
       name: `Fire cue ${n}`,
       style: {
+        // Cue-naam wordt automatisch ingevuld zodra liveFire de naam
+        // pusht via /livefire/cue/<n>/name; tot dat moment toont de
+        // tile alleen het nummer.
         text: `${n}\\n$(livefire:cue_${n}_name)`,
+        size: '14',
+        bgcolor: COLORS.fire.bg,
+        color: COLORS.fire.fg,
+      },
+      steps: [
+        {
+          down: [{ actionId: 'fire_by_number', options: { cue_number: String(n) } }],
+          up: [],
+        },
+      ],
+      feedbacks: [
+        {
+          feedbackId: 'cue_state',
+          options: { cue_number: String(n), state: 'running' },
+          style: { bgcolor: COLORS.fireRunning.bg, color: COLORS.fireRunning.fg },
+        },
+      ],
+    }
+  }
+
+  // ---- Fire by bank (scrollend 1..16, 17..32, 33..48, ...) -------------
+  // Deze tiles vuren de cue waar `fire_bank_<i>` op dat moment naar
+  // wijst — operator drukt op een vaste bank-knop, en die verandert
+  // van betekenis als de bank-offset omgaat.
+
+  for (let i = 1; i <= 16; i++) {
+    presets[`bank_fire_${i}`] = {
+      type: 'button',
+      category: 'Fire by bank',
+      name: `Bank slot ${i}`,
+      style: {
+        text: `$(livefire:fire_bank_${i})\\n$(livefire:fire_bank_${i}_name)`,
         size: '14',
         bgcolor: COLORS.fire.bg,
         color: COLORS.fire.fg,
@@ -183,7 +237,7 @@ export function buildPresets(): CompanionPresetDefinitions {
           down: [
             {
               actionId: 'fire_by_number',
-              options: { cue_number: String(n) },
+              options: { cue_number: `$(livefire:fire_bank_${i})` },
             },
           ],
           up: [],
@@ -192,10 +246,47 @@ export function buildPresets(): CompanionPresetDefinitions {
       feedbacks: [
         {
           feedbackId: 'cue_state',
-          options: { cue_number: String(n), state: 'running' },
+          options: {
+            cue_number: `$(livefire:fire_bank_${i})`,
+            state: 'running',
+          },
+          style: { bgcolor: COLORS.fireRunning.bg, color: COLORS.fireRunning.fg },
+        },
+      ],
+    }
+  }
+
+  // Bank-switch knoppen — vier standaard banks.
+  const banks: Array<{ label: string; offset: number; key: string }> = [
+    { label: 'Bank\\n1-16', offset: 0, key: 'bank_set_0' },
+    { label: 'Bank\\n17-32', offset: 16, key: 'bank_set_16' },
+    { label: 'Bank\\n33-48', offset: 32, key: 'bank_set_32' },
+    { label: 'Bank\\n49-64', offset: 48, key: 'bank_set_48' },
+  ]
+  for (const { label, offset, key } of banks) {
+    presets[key] = {
+      type: 'button',
+      category: 'Fire by bank',
+      name: `Set bank to ${label.replace('\\n', ' ')}`,
+      style: {
+        text: label,
+        size: '14',
+        bgcolor: COLORS.bank.bg,
+        color: COLORS.bank.fg,
+      },
+      steps: [
+        {
+          down: [{ actionId: 'set_fire_bank_offset', options: { offset } }],
+          up: [],
+        },
+      ],
+      feedbacks: [
+        {
+          feedbackId: 'fire_bank_at',
+          options: { offset },
           style: {
-            bgcolor: COLORS.fireRunning.bg,
-            color: COLORS.fireRunning.fg,
+            bgcolor: COLORS.bankActive.bg,
+            color: COLORS.bankActive.fg,
           },
         },
       ],

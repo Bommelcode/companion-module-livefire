@@ -1,10 +1,5 @@
 /**
  * Companion feedbacks — visual states on Stream Deck buttons.
- *
- * `cue_state` lights a button when a specific cue (by number) is in
- * a given state. `countdown_active` lights when the countdown clock
- * is running. `has_active` lights when at least one cue is playing.
- * `playhead_at` lights when the playhead points at a given index.
  */
 import {
   combineRgb,
@@ -91,6 +86,42 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
       ],
       callback: (feedback) =>
         Number(self.state.playhead) === Number(feedback.options.index),
+    },
+    is_connected: {
+      type: 'boolean',
+      name: 'OSC link is up',
+      description:
+        'Light up when the module has an active OSC connection to liveFire. ' +
+        'Use the inverted style (red) for a "disconnected" warning button.',
+      defaultStyle: {
+        bgcolor: combineRgb(40, 120, 40),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () => self.state.connected === true,
+    },
+    fire_bank_at: {
+      type: 'boolean',
+      name: 'Fire bank offset is at value',
+      description:
+        'Light up when the fire-bank offset matches the given value. Use ' +
+        'this on the bank-switch buttons to highlight the active bank.',
+      defaultStyle: {
+        bgcolor: combineRgb(220, 130, 30),
+        color: combineRgb(0, 0, 0),
+      },
+      options: [
+        {
+          type: 'number',
+          id: 'offset',
+          label: 'Offset value',
+          default: 0,
+          min: 0,
+          max: 9999,
+        },
+      ],
+      callback: (feedback) =>
+        Number(self.state.fireBankOffset ?? 0) === Number(feedback.options.offset),
     },
   }
 }

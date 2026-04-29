@@ -1,11 +1,19 @@
 /**
  * Companion variables — text values exposed for use in button text,
  * triggers, etc. liveFire's snapshot pushes drive these directly.
+ *
+ * MAX_CUE_NAMES bepaalt hoever de cue_<n>_name-serie loopt. We
+ * declareren 'm statisch (Companion's variable-list moet bekend zijn
+ * vóór runtime). 32 dekt typische Stream Deck XL setups (16-button
+ * fire-grid + 1 bank scroll = max 32 zichtbaar tegelijk).
  */
 import type { CompanionVariableDefinition } from '@companion-module/base'
 
+export const MAX_CUE_NAMES = 32
+export const FIRE_BANK_SIZE = 16
+
 export function buildVariables(): CompanionVariableDefinition[] {
-  return [
+  const vars: CompanionVariableDefinition[] = [
     { variableId: 'playhead', name: 'Playhead index (0-based)' },
     { variableId: 'playhead_total', name: 'Total cue count' },
     { variableId: 'playhead_name', name: 'Name of the cue at the playhead' },
@@ -17,15 +25,47 @@ export function buildVariables(): CompanionVariableDefinition[] {
     },
     {
       variableId: 'remaining_label',
-      name: 'Name of the cue driving the countdown',
+      name: 'Name of the cue driving the countdown (= now playing)',
     },
     { variableId: 'cuecount', name: 'Cuecount in the workspace' },
+    {
+      variableId: 'connected',
+      name: 'OSC link to liveFire is up (1) or not (0)',
+    },
+    {
+      variableId: 'fire_bank_offset',
+      name: 'Current fire-bank offset (0 = cues 1..16, 16 = cues 17..32, ...)',
+    },
   ]
+  // Statische cue_<n>_name serie — Companion vereist dat we alle
+  // variabelen vooraf bekend maken; runtime values worden gezet door
+  // index.ts handleIncoming op iedere /livefire/cue/<n>/name push.
+  for (let n = 1; n <= MAX_CUE_NAMES; n++) {
+    vars.push({
+      variableId: `cue_${n}_name`,
+      name: `Name of cue with number "${n}"`,
+    })
+  }
+  // Bank-derived: fire_bank_<i> (cue-nummer) + fire_bank_<i>_name (= naam
+  // van die cue). i loopt 1..16, mapping = offset + i.
+  for (let i = 1; i <= FIRE_BANK_SIZE; i++) {
+    vars.push(
+      {
+        variableId: `fire_bank_${i}`,
+        name: `Bank slot ${i} → resolves to cue number (offset+${i})`,
+      },
+      {
+        variableId: `fire_bank_${i}_name`,
+        name: `Bank slot ${i} → name of the cue it points at`,
+      },
+    )
+  }
+  return vars
 }
 
 export function applySnapshotToVariables(self: any): void {
   const remaining = Number(self.state.remaining ?? 0)
-  self.setVariableValues({
+  const values: Record<string, string | number> = {
     playhead: self.state.playhead,
     playhead_total: self.state.playheadTotal,
     playhead_name: self.state.playheadName,
@@ -34,7 +74,22 @@ export function applySnapshotToVariables(self: any): void {
     remaining_formatted: formatRemaining(remaining),
     remaining_label: self.state.remainingLabel,
     cuecount: self.state.cueCount,
-  })
+    connected: self.state.connected ? 1 : 0,
+    fire_bank_offset: self.state.fireBankOffset,
+  }
+  // Per-cue namen via de cueNames-map. Niet-bekende cues krijgen lege
+  // string zodat de preset-text netjes blijft i.p.v. literal placeholder.
+  for (let n = 1; n <= MAX_CUE_NAMES; n++) {
+    values[`cue_${n}_name`] = self.state.cueNames.get(String(n)) ?? ''
+  }
+  // Bank-resolutie — pure rekenkundig op offset + cueNames-map.
+  const offset = Number(self.state.fireBankOffset ?? 0)
+  for (let i = 1; i <= FIRE_BANK_SIZE; i++) {
+    const target = offset + i
+    values[`fire_bank_${i}`] = String(target)
+    values[`fire_bank_${i}_name`] = self.state.cueNames.get(String(target)) ?? ''
+  }
+  self.setVariableValues(values)
 }
 
 function formatRemaining(seconds: number): string {
