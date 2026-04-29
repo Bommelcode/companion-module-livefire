@@ -29,7 +29,11 @@ export function buildVariables(): CompanionVariableDefinition[] {
     },
     {
       variableId: 'remaining_sec',
-      name: 'Remaining seconds, zero-padded (for split-display tile 3 of 3)',
+      name: 'Remaining seconds, zero-padded (for split-display tile 2 of 3)',
+    },
+    {
+      variableId: 'remaining_tenths',
+      name: 'Remaining tenths-of-a-second, single digit (split-display tile 3 of 3)',
     },
     {
       variableId: 'remaining_label',
@@ -80,6 +84,7 @@ export function applySnapshotToVariables(self: any): void {
   const absSec = Math.abs(remaining)
   const minutes = Math.floor(absSec / 60)
   const seconds = Math.floor(absSec % 60)
+  const tenths = Math.floor((absSec - Math.floor(absSec)) * 10) % 10
   const values: Record<string, string | number> = {
     playhead: self.state.playhead,
     playhead_total: self.state.playheadTotal,
@@ -89,6 +94,7 @@ export function applySnapshotToVariables(self: any): void {
     remaining_formatted: formatRemaining(remaining),
     remaining_min: `${sign}${minutes}`,
     remaining_sec: seconds.toString().padStart(2, '0'),
+    remaining_tenths: tenths.toString(),
     remaining_label: self.state.remainingLabel,
     cuecount: self.state.cueCount,
     connected: self.state.connected ? 1 : 0,

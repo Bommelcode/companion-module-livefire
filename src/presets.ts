@@ -120,10 +120,11 @@ export function buildPresets(): CompanionPresetDefinitions {
     ],
   }
 
-  // Drie-knops split-countdown: minutes | : | seconds. Sleep deze drie
-  // naast elkaar in de cuelist-bar voor een grote leesbare timer (font
-  // 'auto' = vult tot ~44pt op een lege Stream Deck-button) — handig
-  // tijdens shows waar de operator vanaf 2-3m moet kunnen aflezen.
+  // Drie-knops split-countdown: minutes | seconds | tenths. Sleep deze
+  // drie naast elkaar voor een grote leesbare timer (size 'auto' = elk
+  // getal vult de hele button) — handig tijdens shows waar de operator
+  // vanaf 2-3m moet kunnen aflezen. Tenths telt vloeiend mee dankzij
+  // de 100 ms feedback-tick van liveFire.
   const splitCountdownFeedback = [
     {
       feedbackId: 'countdown_active',
@@ -147,12 +148,12 @@ export function buildPresets(): CompanionPresetDefinitions {
     steps: [{ down: [], up: [] }],
     feedbacks: splitCountdownFeedback,
   }
-  presets['remaining_split_sep'] = {
+  presets['remaining_split_sec'] = {
     type: 'button',
     category: 'Status',
-    name: 'Countdown — colon (split tile 2/3)',
+    name: 'Countdown — seconds (split tile 2/3)',
     style: {
-      text: ':',
+      text: '$(livefire:remaining_sec)',
       size: 'auto',
       bgcolor: COLORS.info.bg,
       color: COLORS.info.fg,
@@ -160,12 +161,12 @@ export function buildPresets(): CompanionPresetDefinitions {
     steps: [{ down: [], up: [] }],
     feedbacks: splitCountdownFeedback,
   }
-  presets['remaining_split_sec'] = {
+  presets['remaining_split_tenths'] = {
     type: 'button',
     category: 'Status',
-    name: 'Countdown — seconds (split tile 3/3)',
+    name: 'Countdown — tenths (split tile 3/3)',
     style: {
-      text: '$(livefire:remaining_sec)',
+      text: '$(livefire:remaining_tenths)',
       size: 'auto',
       bgcolor: COLORS.info.bg,
       color: COLORS.info.fg,
