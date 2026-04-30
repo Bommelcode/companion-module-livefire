@@ -30,6 +30,7 @@ export interface LivefireConfig {
   host: string
   cmdPort: number
   feedbackPort: number
+  launchCommand: string
 }
 
 /** Hoe lang we wachten op een feedback-bericht voordat we besluiten dat
@@ -219,6 +220,17 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
         default: 12321,
         min: 1,
         max: 65535,
+      },
+      {
+        type: 'textinput',
+        id: 'launchCommand',
+        label: 'liveFire launch command',
+        tooltip:
+          'Used by the "Launch liveFire" action to start the app. ' +
+          'Quoted paths met spaties zijn OK. Default = de standaard ' +
+          'venv-path; pas aan als je elders hebt geïnstalleerd.',
+        width: 12,
+        default: 'C:\\livefire-0.4.1\\.venv\\Scripts\\python.exe -m livefire',
       },
     ]
   }

@@ -4,6 +4,7 @@
  * mutates a local module variable that drives the bank-fire presets).
  */
 import type { CompanionActionDefinitions } from '@companion-module/base'
+import { spawn } from 'child_process'
 
 export function buildActions(self: any): CompanionActionDefinitions {
   return {
@@ -67,6 +68,45 @@ export function buildActions(self: any): CompanionActionDefinitions {
         ).trim()
         if (!num) return
         self.osc?.send(`/livefire/fire/${num}`)
+      },
+    },
+    launch_livefire: {
+      name: 'Launch liveFire (start the app)',
+      description:
+        "Spawn the liveFire Python process. Uses the 'liveFire launch " +
+        "command' field from the connection config. detached + unref() " +
+        "zorgen dat liveFire blijft leven als Companion sluit, en de " +
+        "singleton-lock vangt 'n dubbele start netjes op met een prompt.",
+      options: [],
+      callback: () => {
+        const raw = String(self.config?.launchCommand ?? '').trim()
+        if (!raw) {
+          self.log('warn', 'launch_livefire: no command configured')
+          return
+        }
+        // Simpele tokenizer die quoted segmenten respecteert. Genoeg voor
+        // typische Windows-paden zoals "C:\\livefire\\.venv\\Scripts\\
+        // python.exe" -m livefire.
+        const tokens: string[] = []
+        const re = /"([^"]+)"|(\S+)/g
+        let m: RegExpExecArray | null
+        while ((m = re.exec(raw)) !== null) {
+          tokens.push(m[1] ?? m[2])
+        }
+        if (tokens.length === 0) return
+        const program = tokens[0]
+        const args = tokens.slice(1)
+        try {
+          const child = spawn(program, args, {
+            detached: true,
+            stdio: 'ignore',
+            windowsHide: false,
+          })
+          child.unref()
+          self.log('info', `launch_livefire spawned: ${program} ${args.join(' ')}`)
+        } catch (e) {
+          self.log('error', `launch_livefire failed: ${e}`)
+        }
       },
     },
     set_fire_bank_offset: {

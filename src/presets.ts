@@ -289,6 +289,35 @@ export function buildPresets(): CompanionPresetDefinitions {
     ],
   }
 
+  presets['launch_livefire'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Launch liveFire',
+    style: {
+      // Default = paars-grijs "LAUNCH liveFire"; wanneer connected omgaat
+      // naar groen 'LIVE'. Klikken terwijl liveFire al draait triggert
+      // de singleton-lock prompt — geen schade aan de show.
+      text: 'LAUNCH\\nliveFire',
+      size: '14',
+      bgcolor: combineRgb(80, 50, 130),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [
+      { down: [{ actionId: 'launch_livefire', options: {} }], up: [] },
+    ],
+    feedbacks: [
+      {
+        feedbackId: 'is_connected',
+        options: {},
+        style: {
+          text: 'liveFire\\nLIVE',
+          bgcolor: COLORS.connected.bg,
+          color: COLORS.connected.fg,
+        },
+      },
+    ],
+  }
+
   presets['connection_status'] = {
     type: 'button',
     category: 'Status',
