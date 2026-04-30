@@ -285,7 +285,6 @@ export function buildPresets(): CompanionPresetDefinitions {
       {
         feedbackId: 'cue_color',
         options: { cue_number: '$(livefire:playhead_number)' },
-        style: {},
       },
     ],
   }
@@ -340,13 +339,12 @@ export function buildPresets(): CompanionPresetDefinitions {
         },
       ],
       feedbacks: [
-        // Eerst cue_color (paint button bg met de cue's color-tag) — zo
-        // zie je per-cue welke kleur 'ie heeft. cue_state komt erna en
-        // overschrijft naar groen wanneer 'ie speelt.
+        // Eerst cue_color (advanced feedback — callback returnt zelf de
+        // style, geen `style`-key nodig op de preset-entry want anders
+        // klaagt Companion's UI dat de override leeg is).
         {
           feedbackId: 'cue_color',
           options: { cue_number: String(n) },
-          style: {},
         },
         {
           feedbackId: 'cue_state',
@@ -390,11 +388,10 @@ export function buildPresets(): CompanionPresetDefinitions {
       feedbacks: [
         // Per-cue color via de variable die de bank-positie naar 'n
         // cue-nummer resolved. Volgorde net als bij fire_${n}: kleur
-        // eerst, running-groen erna.
+        // eerst (advanced, returnt zelf de style), running-groen erna.
         {
           feedbackId: 'cue_color',
           options: { cue_number: `$(livefire:fire_bank_${i})` },
-          style: {},
         },
         {
           feedbackId: 'cue_state',
