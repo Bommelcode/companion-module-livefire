@@ -266,6 +266,30 @@ export function buildPresets(): CompanionPresetDefinitions {
     feedbacks: [],
   }
 
+  presets['standby'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Standby (cue queued for next GO)',
+    style: {
+      // Toont de cue die op het playhead staat — d.w.z. de eerstvolgende
+      // die met GO gaat starten. cue_color-feedback hieronder kleurt 'm
+      // met de tag-kleur uit liveFire zodat de operator visueel ziet
+      // wat er klaarstaat. STANDBY-tekst boven, cue-naam eronder.
+      text: 'STANDBY\\n$(livefire:playhead_name)',
+      size: '14',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'cue_color',
+        options: { cue_number: '$(livefire:playhead_number)' },
+        style: {},
+      },
+    ],
+  }
+
   presets['connection_status'] = {
     type: 'button',
     category: 'Status',
@@ -316,6 +340,14 @@ export function buildPresets(): CompanionPresetDefinitions {
         },
       ],
       feedbacks: [
+        // Eerst cue_color (paint button bg met de cue's color-tag) — zo
+        // zie je per-cue welke kleur 'ie heeft. cue_state komt erna en
+        // overschrijft naar groen wanneer 'ie speelt.
+        {
+          feedbackId: 'cue_color',
+          options: { cue_number: String(n) },
+          style: {},
+        },
         {
           feedbackId: 'cue_state',
           options: { cue_number: String(n), state: 'running' },
@@ -356,6 +388,14 @@ export function buildPresets(): CompanionPresetDefinitions {
         },
       ],
       feedbacks: [
+        // Per-cue color via de variable die de bank-positie naar 'n
+        // cue-nummer resolved. Volgorde net als bij fire_${n}: kleur
+        // eerst, running-groen erna.
+        {
+          feedbackId: 'cue_color',
+          options: { cue_number: `$(livefire:fire_bank_${i})` },
+          style: {},
+        },
         {
           feedbackId: 'cue_state',
           options: {

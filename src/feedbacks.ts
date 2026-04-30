@@ -100,6 +100,50 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
       options: [],
       callback: () => self.state.connected === true,
     },
+    cue_color: {
+      // Advanced feedback — kleurt de button-bg met de cue's color-tag uit
+      // liveFire (hex). Leeg of geen match = geen override (defaultStyle).
+      type: 'advanced',
+      name: 'Apply cue color tag (live)',
+      description:
+        "Color the button background with the cue's color tag from " +
+        "liveFire. Leave the cue-number empty to read it from the " +
+        'preset variable text (e.g. $(livefire:fire_bank_1)).',
+      options: [
+        {
+          type: 'textinput',
+          id: 'cue_number',
+          label: 'Cue number (supports variables)',
+          default: '$(livefire:fire_bank_1)',
+          useVariables: true,
+        },
+      ],
+      callback: async (feedback, ctx) => {
+        const cueNumber = String(
+          await ctx.parseVariablesInString(
+            String(feedback.options.cue_number ?? ''),
+          ),
+        ).trim()
+        if (!cueNumber) return {}
+        const hex = self.state.cueColors.get(cueNumber)
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return {}
+        // Parse #RRGGBB. Companion's combineRgb wants three ints.
+        const m = hex.match(/^#([0-9a-fA-F]{6})$/)
+        if (!m) return {}
+        const num = parseInt(m[1], 16)
+        const r = (num >> 16) & 0xff
+        const g = (num >> 8) & 0xff
+        const b = num & 0xff
+        // Auto-pick text color: dark cues get white text, light cues
+        // get black. Standard luma formula.
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b
+        const txt = luma < 140 ? combineRgb(255, 255, 255) : combineRgb(0, 0, 0)
+        return {
+          bgcolor: combineRgb(r, g, b),
+          color: txt,
+        }
+      },
+    },
     fire_bank_at: {
       type: 'boolean',
       name: 'Fire bank offset is at value',

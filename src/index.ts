@@ -54,6 +54,13 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     cueStates: new Map<string, string>(),
     cueNames: new Map<string, string>(),
     cueTypes: new Map<string, string>(),
+    cueColors: new Map<string, string>(),
+    /** Cue-numbers in the order liveFire reports them. Reset on each
+     *  /livefire/cuecount push (which marks the start of a full
+     *  cuelist re-broadcast); appended-to as each /livefire/cue/<n>/name
+     *  arrives. Used by the Standby tile to resolve playhead-index →
+     *  cue-number → color. */
+    cueListOrder: [] as string[],
     cueCount: 0,
     /** True zodra we recent (binnen HEARTBEAT_TIMEOUT_MS) een feedback-
      *  push uit liveFire hebben gezien. UDP zelf is connectionless dus
@@ -205,6 +212,12 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     if (!this.state.connected) {
       this.state.connected = true
       this.checkFeedbacks('is_connected')
+      // Bij elke (re)connect vragen we liveFire om een verse cuelist-
+      // snapshot. Dat fixt 'n re-import-scenario waarin de module geen
+      // namen / kleuren heeft tot de operator een cue muteert. liveFire's
+      // controller listent op /livefire/snapshot/please en trapt de
+      // _broadcast_cuelist_snapshot af.
+      this.osc?.send('/livefire/snapshot/please', [])
     }
     if (address === '/livefire/playhead') {
       this.state.playhead = Number(args[0] ?? 0)
@@ -222,8 +235,13 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       this.state.elapsed = Number(args[0] ?? 0)
     } else if (address === '/livefire/cuecount') {
       this.state.cueCount = Number(args[0] ?? 0)
+      // /cuecount markeert 't begin van een full cuelist-rebroadcast.
+      // We resetten de order-array zodat 'ie precies de volgorde van de
+      // ná-volgende /name pushes weerspiegelt. Voor losse inspector-
+      // updates wordt /cuecount NIET gepusht, dus dit pad raakt 'm niet.
+      this.state.cueListOrder = []
     } else if (address.startsWith('/livefire/cue/')) {
-      // /livefire/cue/<number>/state | /name | /type
+      // /livefire/cue/<number>/state | /name | /type | /color
       const rest = address.substring('/livefire/cue/'.length)
       const slash = rest.indexOf('/')
       if (slash <= 0) return
@@ -235,11 +253,21 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
         this.checkFeedbacks('cue_state')
       } else if (field === 'name') {
         this.state.cueNames.set(cueNumber, value)
+        // Track de volgorde voor de Standby-tile (zie cueListOrder
+        // commentaar). Append alleen als 'ie niet al voorkomt — voor
+        // single-cue inspector-updates niet nodig om weer toe te voegen.
+        if (!this.state.cueListOrder.includes(cueNumber)) {
+          this.state.cueListOrder.push(cueNumber)
+        }
         // Een naam-update kan een cue_<n>_name én een fire_bank_<i>_name
         // raken (als deze cue binnen de huidige bank-range valt). De
         // `applySnapshotToVariables` hieronder herberekent beide series.
       } else if (field === 'type') {
         this.state.cueTypes.set(cueNumber, value)
+      } else if (field === 'color') {
+        this.state.cueColors.set(cueNumber, value)
+        // Color-update raakt cue_color feedback — repaint fire-buttons.
+        this.checkFeedbacks('cue_color')
       }
     } else {
       return

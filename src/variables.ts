@@ -17,6 +17,14 @@ export function buildVariables(): CompanionVariableDefinition[] {
     { variableId: 'playhead', name: 'Playhead index (0-based)' },
     { variableId: 'playhead_total', name: 'Total cue count' },
     { variableId: 'playhead_name', name: 'Name of the cue at the playhead' },
+    {
+      variableId: 'playhead_number',
+      name: 'Cue-number (string) of the cue at the playhead — for Standby tile',
+    },
+    {
+      variableId: 'playhead_color',
+      name: 'Color tag (hex) of the cue at the playhead — for Standby tile',
+    },
     { variableId: 'active', name: 'Number of currently running cues' },
     { variableId: 'remaining', name: 'Remaining seconds (raw)' },
     {
@@ -66,14 +74,22 @@ export function buildVariables(): CompanionVariableDefinition[] {
       name: 'Current fire-bank offset (0 = cues 1..16, 16 = cues 17..32, ...)',
     },
   ]
-  // Statische cue_<n>_name serie — Companion vereist dat we alle
-  // variabelen vooraf bekend maken; runtime values worden gezet door
-  // index.ts handleIncoming op iedere /livefire/cue/<n>/name push.
+  // Statische cue_<n>_name + cue_<n>_color serie — Companion vereist dat
+  // we alle variabelen vooraf bekend maken; runtime values worden gezet
+  // door index.ts handleIncoming op iedere /livefire/cue/<n>/name resp.
+  // /color push. Color is een hex-string (b.v. "#c0392b") of leeg wanneer
+  // de cue geen kleurtag heeft.
   for (let n = 1; n <= MAX_CUE_NAMES; n++) {
-    vars.push({
-      variableId: `cue_${n}_name`,
-      name: `Name of cue with number "${n}"`,
-    })
+    vars.push(
+      {
+        variableId: `cue_${n}_name`,
+        name: `Name of cue with number "${n}"`,
+      },
+      {
+        variableId: `cue_${n}_color`,
+        name: `Color tag (hex) of cue with number "${n}"`,
+      },
+    )
   }
   // Bank-derived: fire_bank_<i> (cue-nummer) + fire_bank_<i>_name (= naam
   // van die cue). i loopt 1..16, mapping = offset + i.
@@ -128,11 +144,22 @@ export function applySnapshotToVariables(self: any): void {
     connected: self.state.connected ? 1 : 0,
     fire_bank_offset: self.state.fireBankOffset,
   }
-  // Per-cue namen via de cueNames-map. Niet-bekende cues krijgen lege
-  // string zodat de preset-text netjes blijft i.p.v. literal placeholder.
+  // Per-cue namen + kleur via de cueNames / cueColors-map. Niet-bekende
+  // cues krijgen lege string zodat de preset-text netjes blijft i.p.v.
+  // literal placeholder.
   for (let n = 1; n <= MAX_CUE_NAMES; n++) {
     values[`cue_${n}_name`] = self.state.cueNames.get(String(n)) ?? ''
+    values[`cue_${n}_color`] = self.state.cueColors?.get(String(n)) ?? ''
   }
+  // Standby-tile: cue-nummer + kleur die op het playhead staat. We
+  // resolven via playhead-index → cuelist → cue_number, en dan via
+  // cueColors-map. cueListOrder wordt door index.ts bijgehouden uit
+  // de meta-pushes (zelfde volgorde als de cuelist in liveFire).
+  const phIdx = Number(self.state.playhead ?? 0)
+  const phNumber: string =
+    self.state.cueListOrder?.[phIdx] ?? ''
+  values['playhead_number'] = phNumber
+  values['playhead_color'] = self.state.cueColors?.get(phNumber) ?? ''
   // Bank-resolutie — pure rekenkundig op offset + cueNames-map.
   const offset = Number(self.state.fireBankOffset ?? 0)
   for (let i = 1; i <= FIRE_BANK_SIZE; i++) {
