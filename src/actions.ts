@@ -130,6 +130,38 @@ export function buildActions(self: any): CompanionActionDefinitions {
         }
       },
     },
+    toggle_showtime: {
+      name: 'Toggle showtime-lock',
+      description:
+        "Flip liveFire's showtime-lock on/off. When on, destructive UI " +
+        'edits (drag-reorder, paste, delete, undo/redo) are blocked but ' +
+        'GO and Stop All keep working.',
+      options: [],
+      callback: () => self.osc?.send('/livefire/showtime/toggle'),
+    },
+    set_showtime: {
+      name: 'Set showtime-lock to value',
+      description:
+        "Force liveFire's showtime-lock to a specific state. Use this " +
+        'in scripted scenarios where you always want the lock on (or off) ' +
+        'rather than relying on its current state.',
+      options: [
+        {
+          type: 'dropdown',
+          id: 'value',
+          label: 'Value',
+          default: '1',
+          choices: [
+            { id: '1', label: 'On (lock the cuelist)' },
+            { id: '0', label: 'Off (unlock)' },
+          ],
+        },
+      ],
+      callback: (event) => {
+        const v = Number(event.options.value ?? 0)
+        self.osc?.send('/livefire/showtime/set', [v])
+      },
+    },
     set_fire_bank_offset: {
       name: 'Set fire-bank offset',
       description:

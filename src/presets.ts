@@ -377,16 +377,20 @@ export function buildPresets(): CompanionPresetDefinitions {
   presets['showtime_indicator'] = {
     type: 'button',
     category: 'Status',
-    name: 'Showtime-lock indicator',
+    name: 'Showtime-lock toggle / indicator',
     style: {
-      // Default = grijs (niet locked). Feedback overrided naar groen +
-      // 🔒-tekst wanneer de operator showtime heeft aangezet.
+      // Default = grijs "EDIT MODE" (niet locked). Feedback overrided naar
+      // groen + SHOW LOCK wanneer de operator showtime aanzet. Druk =
+      // toggle (in liveFire's transport-bar zit ook een knop voor 't
+      // zelfde, deze is z'n Stream Deck-zus).
       text: 'EDIT\\nMODE',
       size: '14',
       bgcolor: combineRgb(35, 35, 35),
       color: combineRgb(160, 160, 160),
     },
-    steps: [{ down: [], up: [] }],
+    steps: [
+      { down: [{ actionId: 'toggle_showtime', options: {} }], up: [] },
+    ],
     feedbacks: [
       {
         feedbackId: 'showtime_locked',
