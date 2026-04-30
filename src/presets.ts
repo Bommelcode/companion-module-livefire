@@ -316,6 +316,53 @@ export function buildPresets(): CompanionPresetDefinitions {
     ],
   }
 
+  // ---- Clock (HH : MM : SS over 8 knoppen) -----------------------------
+  // Bedoeld voor de homescreen — zes digit-tiles + twee dubbele-punt-tiles.
+  // Sleep ze in deze volgorde naast elkaar: H1 H2 : M1 M2 : S1 S2.
+  // Variabelen worden door de module zelf gevoed op 2 Hz (zie index.ts);
+  // geen liveFire-OSC nodig, dus draait ook als liveFire down is.
+  const CLOCK_BG = combineRgb(20, 20, 20)
+  const CLOCK_FG = combineRgb(255, 255, 255)
+  const CLOCK_COLON_FG = combineRgb(160, 160, 160)
+  const clockTile = (varName: string, label: string) => ({
+    type: 'button' as const,
+    category: 'Clock',
+    name: label,
+    style: {
+      text: `$(livefire:${varName})`,
+      size: 'auto' as const,
+      bgcolor: CLOCK_BG,
+      color: CLOCK_FG,
+      alignment: 'center:center' as const,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  })
+  presets['clock_h1'] = clockTile('clock_h1', 'Clock — HH digit 1')
+  presets['clock_h2'] = clockTile('clock_h2', 'Clock — HH digit 2')
+  presets['clock_m1'] = clockTile('clock_m1', 'Clock — MM digit 1')
+  presets['clock_m2'] = clockTile('clock_m2', 'Clock — MM digit 2')
+  presets['clock_s1'] = clockTile('clock_s1', 'Clock — SS digit 1')
+  presets['clock_s2'] = clockTile('clock_s2', 'Clock — SS digit 2')
+  // De twee dubbele punten staan letterlijk in de tile-tekst (geen variabele).
+  // Wat lichter qua kleur dan de digits zodat 't visueel scheidingsteken is.
+  const clockColon = (key: string) => ({
+    type: 'button' as const,
+    category: 'Clock',
+    name: 'Clock — colon separator',
+    style: {
+      text: ':',
+      size: 'auto' as const,
+      bgcolor: CLOCK_BG,
+      color: CLOCK_COLON_FG,
+      alignment: 'center:center' as const,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  })
+  presets['clock_colon_1'] = clockColon('clock_colon_1')
+  presets['clock_colon_2'] = clockColon('clock_colon_2')
+
   // ---- Fire by number (vaste 1..16) ------------------------------------
 
   for (let n = 1; n <= 16; n++) {

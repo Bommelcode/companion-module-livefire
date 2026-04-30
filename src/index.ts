@@ -21,7 +21,9 @@ import {
 import { LivefireOsc } from './osc'
 import { buildActions } from './actions'
 import { buildFeedbacks } from './feedbacks'
-import { buildVariables, applySnapshotToVariables } from './variables'
+import {
+  buildVariables, applySnapshotToVariables, updateClockVariables,
+} from './variables'
 import { buildPresets } from './presets'
 
 export interface LivefireConfig {
@@ -40,6 +42,10 @@ const HEARTBEAT_CHECK_MS = 500
 class LivefireInstance extends InstanceBase<LivefireConfig> {
   public osc: LivefireOsc | undefined
   private heartbeatTimer: ReturnType<typeof setInterval> | undefined
+  /** 1 Hz tick die de clock_*-variabelen update voor de homescreen-klok
+   *  (HH:MM:SS over 8 knoppen verdeeld). Geen relatie met liveFire — pure
+   *  system-time, dus werkt ook als liveFire down is. */
+  private clockTimer: ReturnType<typeof setInterval> | undefined
 
   /** Last-seen transport snapshot — drives Companion variables + feedbacks. */
   public state = {
@@ -86,6 +92,11 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       () => this.checkHeartbeat(),
       HEARTBEAT_CHECK_MS,
     )
+    // Clock-tick: 500 ms zodat seconden visueel synchroon overspringen
+    // (een 1000 ms-tick kan visueel een hele seconde achterlopen door
+    // jitter in setInterval). updateClockVariables is idempotent.
+    updateClockVariables(this)
+    this.clockTimer = setInterval(() => updateClockVariables(this), 500)
     await this.configUpdated(config)
   }
 
@@ -93,6 +104,10 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     if (this.heartbeatTimer !== undefined) {
       clearInterval(this.heartbeatTimer)
       this.heartbeatTimer = undefined
+    }
+    if (this.clockTimer !== undefined) {
+      clearInterval(this.clockTimer)
+      this.clockTimer = undefined
     }
     this.osc?.shutdown()
     this.osc = undefined

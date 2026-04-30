@@ -73,6 +73,15 @@ export function buildVariables(): CompanionVariableDefinition[] {
       variableId: 'fire_bank_offset',
       name: 'Current fire-bank offset (0 = cues 1..16, 16 = cues 17..32, ...)',
     },
+    // System-clock digits — gevoed door updateClockVariables() op 1 Hz.
+    // Bedoeld voor de homescreen 'HH:MM:SS' weergave waar elke digit op
+    // z'n eigen Stream Deck-knop staat (8 knoppen incl. twee dubbele punten).
+    { variableId: 'clock_h1', name: 'System clock — first digit of hours (0..2)' },
+    { variableId: 'clock_h2', name: 'System clock — second digit of hours (0..9)' },
+    { variableId: 'clock_m1', name: 'System clock — first digit of minutes (0..5)' },
+    { variableId: 'clock_m2', name: 'System clock — second digit of minutes (0..9)' },
+    { variableId: 'clock_s1', name: 'System clock — first digit of seconds (0..5)' },
+    { variableId: 'clock_s2', name: 'System clock — second digit of seconds (0..9)' },
   ]
   // Statische cue_<n>_name + cue_<n>_color serie — Companion vereist dat
   // we alle variabelen vooraf bekend maken; runtime values worden gezet
@@ -168,6 +177,24 @@ export function applySnapshotToVariables(self: any): void {
     values[`fire_bank_${i}_name`] = self.state.cueNames.get(String(target)) ?? ''
   }
   self.setVariableValues(values)
+}
+
+/** Push de huidige systeemtijd-digits naar de clock_*-variabelen.
+ *  Aangeroepen op 1 Hz vanuit index.ts. Gebruikt local time omdat de
+ *  operator 'm in z'n eigen tijdzone afleest tijdens een show. */
+export function updateClockVariables(self: any): void {
+  const now = new Date()
+  const hh = now.getHours().toString().padStart(2, '0')
+  const mm = now.getMinutes().toString().padStart(2, '0')
+  const ss = now.getSeconds().toString().padStart(2, '0')
+  self.setVariableValues({
+    clock_h1: hh[0],
+    clock_h2: hh[1],
+    clock_m1: mm[0],
+    clock_m2: mm[1],
+    clock_s1: ss[0],
+    clock_s2: ss[1],
+  })
 }
 
 function formatRemaining(seconds: number): string {
