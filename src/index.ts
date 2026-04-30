@@ -30,8 +30,16 @@ export interface LivefireConfig {
   feedbackPort: number
 }
 
+/** Hoe lang we wachten op een feedback-bericht voordat we besluiten dat
+ *  liveFire weg is. liveFire pusht standaard 10×/s, dus 2 s is ruim
+ *  buiten normale jitter — eerder triggeren geeft false positives, later
+ *  triggeren laat de operator te lang in 't ongewisse. */
+const HEARTBEAT_TIMEOUT_MS = 2000
+const HEARTBEAT_CHECK_MS = 500
+
 class LivefireInstance extends InstanceBase<LivefireConfig> {
   public osc: LivefireOsc | undefined
+  private heartbeatTimer: ReturnType<typeof setInterval> | undefined
 
   /** Last-seen transport snapshot — drives Companion variables + feedbacks. */
   public state = {
@@ -46,9 +54,12 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     cueNames: new Map<string, string>(),
     cueTypes: new Map<string, string>(),
     cueCount: 0,
-    /** True wanneer de OSC-link met liveFire actief is. Drives the
-     *  is_connected feedback en de connection_status preset. */
+    /** True zodra we recent (binnen HEARTBEAT_TIMEOUT_MS) een feedback-
+     *  push uit liveFire hebben gezien. UDP zelf is connectionless dus
+     *  je kunt 't niet aan de socket zien — alleen aan de heartbeat. */
     connected: false,
+    /** Epoch-ms van laatste binnenkomende OSC-message. 0 = nog nooit. */
+    lastFeedbackMs: 0,
     /** Operator-controlled fire-bank offset. 0 = bank slots 1..16 mapping
      *  naar cues 1..16; 16 = slots → 17..32; etc. */
     fireBankOffset: 0,
@@ -60,13 +71,37 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     this.setFeedbackDefinitions(buildFeedbacks(this))
     this.setVariableDefinitions(buildVariables())
     this.setPresetDefinitions(buildPresets())
+    // Heartbeat-watcher: detecteert wanneer liveFire weg is door langer
+    // dan HEARTBEAT_TIMEOUT_MS niets te ontvangen. Wordt opgeruimd in
+    // destroy().
+    this.heartbeatTimer = setInterval(
+      () => this.checkHeartbeat(),
+      HEARTBEAT_CHECK_MS,
+    )
     await this.configUpdated(config)
   }
 
   async destroy(): Promise<void> {
+    if (this.heartbeatTimer !== undefined) {
+      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer = undefined
+    }
     this.osc?.shutdown()
     this.osc = undefined
     this.state.connected = false
+  }
+
+  /** Wordt elke HEARTBEAT_CHECK_MS aangeroepen. Markeert de connectie
+   *  als down zodra we te lang geen feedback-push meer hebben gezien. */
+  private checkHeartbeat(): void {
+    const last = this.state.lastFeedbackMs
+    if (last === 0) return  // nog nooit feedback gehad — laat 'm OFFLINE
+    const stale = Date.now() - last > HEARTBEAT_TIMEOUT_MS
+    if (stale && this.state.connected) {
+      this.state.connected = false
+      this.checkFeedbacks('is_connected')
+      applySnapshotToVariables(this)
+    }
   }
 
   async configUpdated(config: LivefireConfig): Promise<void> {
@@ -89,8 +124,13 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     })
     try {
       await this.osc.start()
+      // Companion's instance-status mag al wel "Ok" — onze UDP-socket
+      // is gebonden. Maar onze eigen state.connected blijft `false`
+      // tot we daadwerkelijk een feedback-push uit liveFire krijgen.
+      // Dat is wat de groene LIVE-indicator drijft.
       this.updateStatus(InstanceStatus.Ok)
-      this.state.connected = true
+      this.state.connected = false
+      this.state.lastFeedbackMs = 0
     } catch (e) {
       this.updateStatus(InstanceStatus.ConnectionFailure, String(e))
       this.state.connected = false
@@ -157,6 +197,14 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
   // ---- incoming feedback handling -----------------------------------
 
   private handleIncoming(address: string, args: any[]): void {
+    // Iedere binnenkomende OSC-message is een heartbeat. Markeer 'm
+    // direct, en flip de connected-status naar true als we down waren —
+    // dan licht de LIVE-indicator weer groen op zodra liveFire terug is.
+    this.state.lastFeedbackMs = Date.now()
+    if (!this.state.connected) {
+      this.state.connected = true
+      this.checkFeedbacks('is_connected')
+    }
     if (address === '/livefire/playhead') {
       this.state.playhead = Number(args[0] ?? 0)
       this.state.playheadTotal = Number(args[1] ?? 0)
