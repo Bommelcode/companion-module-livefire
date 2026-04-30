@@ -316,6 +316,111 @@ export function buildPresets(): CompanionPresetDefinitions {
     ],
   }
 
+  // ---- Homescreen status tiles -----------------------------------------
+
+  presets['workspace_name'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Workspace name + dirty indicator',
+    style: {
+      // Naam staat boven, "*UNSAVED*" verschijnt eronder zodra dirty.
+      // workspace_dirty-feedback overrided naar amber zodat de operator
+      // 't ook visueel oppikt zonder de tekst te lezen.
+      text: '$(livefire:workspace_name)',
+      size: '14',
+      bgcolor: combineRgb(35, 35, 35),
+      color: combineRgb(225, 225, 225),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'workspace_dirty',
+        options: {},
+        style: {
+          text: '$(livefire:workspace_name)\\n*UNSAVED*',
+          bgcolor: combineRgb(170, 110, 30),
+          color: combineRgb(255, 255, 255),
+        },
+      },
+    ],
+  }
+
+  presets['showtime_indicator'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Showtime-lock indicator',
+    style: {
+      // Default = grijs (niet locked). Feedback overrided naar groen +
+      // 🔒-tekst wanneer de operator showtime heeft aangezet.
+      text: 'EDIT\\nMODE',
+      size: '14',
+      bgcolor: combineRgb(35, 35, 35),
+      color: combineRgb(160, 160, 160),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'showtime_locked',
+        options: {},
+        style: {
+          text: 'SHOW\\nLOCK',
+          bgcolor: combineRgb(30, 110, 60),
+          color: combineRgb(255, 255, 255),
+        },
+      },
+    ],
+  }
+
+  presets['version_banner'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Build / version banner',
+    style: {
+      // Compacte twee-regels: liveFire-versie boven, module-versie onder.
+      // Beide via variabelen zodat een upgrade aan beide kanten meteen
+      // zichtbaar is.
+      text: 'lF $(livefire:livefire_version)\\nmod $(livefire:module_version)',
+      size: '7',
+      bgcolor: combineRgb(20, 20, 20),
+      color: combineRgb(140, 140, 140),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['surfaces_count'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Surfaces connected (Companion internal)',
+    style: {
+      // Pakt Companion's eigen internal-variabele die het aantal
+      // verbonden Stream Decks / Loupedecks / etc. bijhoudt. Werkt
+      // dus ook als liveFire down is.
+      text: 'SURF\\n$(internal:surfaces_connected)',
+      size: '14',
+      bgcolor: combineRgb(35, 35, 35),
+      color: combineRgb(225, 225, 225),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['date'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'System date (matches the clock)',
+    style: {
+      // Companion internal: time_hms format. Voor datum gebruiken we
+      // dow + day + maand-naam — operator-vriendelijke pijler.
+      text: '$(internal:date_dow_str_short)\\n$(internal:date_day) $(internal:date_month_str_short)',
+      size: '14',
+      bgcolor: combineRgb(20, 20, 20),
+      color: combineRgb(225, 225, 225),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  }
+
   // ---- Clock (HH : MM : SS over 8 knoppen) -----------------------------
   // Bedoeld voor de homescreen — zes digit-tiles + twee dubbele-punt-tiles.
   // Sleep ze in deze volgorde naast elkaar: H1 H2 : M1 M2 : S1 S2.

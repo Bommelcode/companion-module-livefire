@@ -100,6 +100,32 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
       options: [],
       callback: () => self.state.connected === true,
     },
+    workspace_dirty: {
+      type: 'boolean',
+      name: 'Workspace has unsaved edits',
+      description:
+        'Light up the button when liveFire has unsaved workspace edits. ' +
+        'Default = amber so the operator notices but it doesn\'t alarm.',
+      defaultStyle: {
+        bgcolor: combineRgb(170, 110, 30),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () => self.state.workspaceDirty === true,
+    },
+    showtime_locked: {
+      type: 'boolean',
+      name: 'Showtime-lock is engaged',
+      description:
+        'Light up green when liveFire\'s showtime-lock is on (destructive ' +
+        'edits blocked). Default style = subtle green; pair with a 🔒 glyph.',
+      defaultStyle: {
+        bgcolor: combineRgb(30, 110, 60),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () => self.state.showtimeLocked === true,
+    },
     cue_color: {
       // Advanced feedback — kleurt de button-bg met de cue's color-tag uit
       // liveFire (hex). Leeg of geen match = geen override (defaultStyle).

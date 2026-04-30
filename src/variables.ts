@@ -11,6 +11,9 @@ import type { CompanionVariableDefinition } from '@companion-module/base'
 
 export const MAX_CUE_NAMES = 32
 export const FIRE_BANK_SIZE = 16
+// Wordt mee-gebumpd met package.json bij elke release. Module gebruikt
+// 'm voor de version-banner-tile op de homescreen.
+const MODULE_VERSION = '0.2.12'
 
 export function buildVariables(): CompanionVariableDefinition[] {
   const vars: CompanionVariableDefinition[] = [
@@ -73,6 +76,27 @@ export function buildVariables(): CompanionVariableDefinition[] {
       variableId: 'fire_bank_offset',
       name: 'Current fire-bank offset (0 = cues 1..16, 16 = cues 17..32, ...)',
     },
+    // Workspace + showtime + version meta — voor homescreen-status-tiles.
+    {
+      variableId: 'workspace_name',
+      name: 'Workspace name (basename, no extension)',
+    },
+    {
+      variableId: 'workspace_dirty',
+      name: 'Workspace has unsaved edits (1) or is clean (0)',
+    },
+    {
+      variableId: 'showtime_locked',
+      name: 'Showtime-lock is engaged in liveFire (1) or off (0)',
+    },
+    {
+      variableId: 'livefire_version',
+      name: 'liveFire APP_VERSION as reported on connect',
+    },
+    {
+      variableId: 'module_version',
+      name: 'This Companion module version (compile-time constant)',
+    },
     // System-clock digits — gevoed door updateClockVariables() op 1 Hz.
     // Bedoeld voor de homescreen 'HH:MM:SS' weergave waar elke digit op
     // z'n eigen Stream Deck-knop staat (8 knoppen incl. twee dubbele punten).
@@ -133,6 +157,9 @@ export function applySnapshotToVariables(self: any): void {
   const elMin = Math.floor(elapsedAbs / 60)
   const elSec = Math.floor(elapsedAbs % 60)
   const elTen = Math.floor((elapsedAbs - Math.floor(elapsedAbs)) * 10) % 10
+  // Module-versie is een compile-time constant — gepakt uit
+  // package.json zodat 't één plek is om te bumpen.
+  const moduleVersion = MODULE_VERSION
   const values: Record<string, string | number> = {
     playhead: self.state.playhead,
     playhead_total: self.state.playheadTotal,
@@ -152,6 +179,11 @@ export function applySnapshotToVariables(self: any): void {
     cuecount: self.state.cueCount,
     connected: self.state.connected ? 1 : 0,
     fire_bank_offset: self.state.fireBankOffset,
+    workspace_name: self.state.workspaceName ?? '',
+    workspace_dirty: self.state.workspaceDirty ? 1 : 0,
+    showtime_locked: self.state.showtimeLocked ? 1 : 0,
+    livefire_version: self.state.livefireVersion ?? '',
+    module_version: moduleVersion,
   }
   // Per-cue namen + kleur via de cueNames / cueColors-map. Niet-bekende
   // cues krijgen lege string zodat de preset-text netjes blijft i.p.v.

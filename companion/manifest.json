@@ -3,7 +3,7 @@
   "name": "livefire",
   "shortname": "liveFire",
   "description": "Cue-based playback for live events. Drives audio/video/image/PowerPoint cues from a Stream Deck.",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "license": "MIT",
   "repository": "https://github.com/Bommelcode/companion-module-livefire",
   "bugs": "https://github.com/Bommelcode/companion-module-livefire/issues",

@@ -68,6 +68,12 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
      *  cue-number → color. */
     cueListOrder: [] as string[],
     cueCount: 0,
+    /** Workspace-meta — gevoed door /livefire/workspace_name + _dirty
+     *  + showtime_locked + version. Bedoeld voor homescreen-status-tiles. */
+    workspaceName: '',
+    workspaceDirty: false,
+    showtimeLocked: false,
+    livefireVersion: '',
     /** True zodra we recent (binnen HEARTBEAT_TIMEOUT_MS) een feedback-
      *  push uit liveFire hebben gezien. UDP zelf is connectionless dus
      *  je kunt 't niet aan de socket zien — alleen aan de heartbeat. */
@@ -248,6 +254,22 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       this.state.countdownActive = Number(args[0] ?? 0) !== 0
     } else if (address === '/livefire/elapsed') {
       this.state.elapsed = Number(args[0] ?? 0)
+    } else if (address === '/livefire/workspace_name') {
+      this.state.workspaceName = String(args[0] ?? '')
+    } else if (address === '/livefire/workspace_dirty') {
+      const dirty = Number(args[0] ?? 0) !== 0
+      if (dirty !== this.state.workspaceDirty) {
+        this.state.workspaceDirty = dirty
+        this.checkFeedbacks('workspace_dirty')
+      }
+    } else if (address === '/livefire/showtime_locked') {
+      const locked = Number(args[0] ?? 0) !== 0
+      if (locked !== this.state.showtimeLocked) {
+        this.state.showtimeLocked = locked
+        this.checkFeedbacks('showtime_locked')
+      }
+    } else if (address === '/livefire/version') {
+      this.state.livefireVersion = String(args[0] ?? '')
     } else if (address === '/livefire/cuecount') {
       this.state.cueCount = Number(args[0] ?? 0)
       // /cuecount markeert 't begin van een full cuelist-rebroadcast.
