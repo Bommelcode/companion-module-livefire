@@ -79,7 +79,7 @@ export function buildActions(self: any): CompanionActionDefinitions {
         "singleton-lock vangt 'n dubbele start netjes op met een prompt.",
       options: [],
       callback: () => {
-        const raw = String(self.config?.launchCommand ?? '').trim()
+        const raw = String(self.cfg?.launchCommand ?? '').trim()
         if (!raw) {
           self.log('warn', 'launch_livefire: no command configured')
           return

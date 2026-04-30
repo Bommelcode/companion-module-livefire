@@ -47,6 +47,11 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
    *  (HH:MM:SS over 8 knoppen verdeeld). Geen relatie met liveFire — pure
    *  system-time, dus werkt ook als liveFire down is. */
   private clockTimer: ReturnType<typeof setInterval> | undefined
+  /** Cached connection-config — InstanceBase exposeert this.config NIET
+   *  als public property (in 1.10.0 tenminste), dus we cachen 'm zelf
+   *  zodat action-callbacks (bv. launch_livefire) bij z'n velden kunnen.
+   *  Wordt gevuld in configUpdated(). */
+  public cfg: LivefireConfig | undefined
 
   /** Last-seen transport snapshot — drives Companion variables + feedbacks. */
   public state = {
@@ -135,6 +140,9 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
   }
 
   async configUpdated(config: LivefireConfig): Promise<void> {
+    // Cache zelf — InstanceBase.config is niet publiekelijk leesbaar in
+    // de huidige API-versie, dus action-callbacks moeten via self.cfg.
+    this.cfg = config
     this.osc?.shutdown()
     this.osc = new LivefireOsc({
       host: config.host || '127.0.0.1',
