@@ -296,10 +296,17 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     } else if (address === '/livefire/cuecount') {
       this.state.cueCount = Number(args[0] ?? 0)
       // /cuecount markeert 't begin van een full cuelist-rebroadcast.
-      // We resetten de order-array zodat 'ie precies de volgorde van de
-      // ná-volgende /name pushes weerspiegelt. Voor losse inspector-
-      // updates wordt /cuecount NIET gepusht, dus dit pad raakt 'm niet.
+      // Alle per-cue maps wegen — verwijderde cues zouden anders met
+      // hun oude naam/kleur/state op fire-buttons blijven staan, want
+      // liveFire pusht alleen meta voor de ÓVERGEBLEVEN cues. Voor losse
+      // inspector-updates wordt /cuecount NIET gepusht, dus dit pad
+      // raakt 'm niet.
       this.state.cueListOrder = []
+      this.state.cueNames.clear()
+      this.state.cueTypes.clear()
+      this.state.cueColors.clear()
+      this.state.cueStates.clear()
+      this.checkFeedbacks('cue_state', 'cue_color')
     } else if (address.startsWith('/livefire/cue/')) {
       // /livefire/cue/<number>/state | /name | /type | /color
       const rest = address.substring('/livefire/cue/'.length)
