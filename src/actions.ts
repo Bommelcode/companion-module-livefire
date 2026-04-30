@@ -130,6 +130,24 @@ export function buildActions(self: any): CompanionActionDefinitions {
         }
       },
     },
+    save_workspace: {
+      name: 'Save workspace',
+      description:
+        "Save liveFire's open workspace. If the workspace has no path " +
+        '(never saved), liveFire will open its Save-As dialog. Triggers ' +
+        'a 1.5 s "SAVED" flash on this Stream Deck button.',
+      options: [],
+      callback: () => {
+        self.osc?.send('/livefire/save')
+        // Optimistische UI-flash: we zetten de feedback-state lokaal aan,
+        // dwingen 'n re-render, en clearen 'm na 1.5 s. liveFire's eigen
+        // dirty=0-push komt 100 ms later vanzelf, dus de tile gaat netjes
+        // van amber → groen-flash → grijs-clean.
+        self.state.lastSaveActionMs = Date.now()
+        self.checkFeedbacks('recently_saved')
+        setTimeout(() => self.checkFeedbacks('recently_saved'), 1600)
+      },
+    },
     toggle_showtime: {
       name: 'Toggle showtime-lock',
       description:

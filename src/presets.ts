@@ -350,24 +350,39 @@ export function buildPresets(): CompanionPresetDefinitions {
   presets['workspace_name'] = {
     type: 'button',
     category: 'Status',
-    name: 'Workspace name + dirty indicator',
+    name: 'Workspace name + save-on-press',
     style: {
       // Naam staat boven, "*UNSAVED*" verschijnt eronder zodra dirty.
       // workspace_dirty-feedback overrided naar amber zodat de operator
-      // 't ook visueel oppikt zonder de tekst te lezen.
+      // 't ook visueel oppikt zonder de tekst te lezen. Drukken triggert
+      // save_workspace en flash't 1.5 s "SAVED" via recently_saved.
       text: '$(livefire:workspace_name)',
       size: '14',
       bgcolor: combineRgb(35, 35, 35),
       color: combineRgb(225, 225, 225),
     },
-    steps: [{ down: [], up: [] }],
+    steps: [
+      { down: [{ actionId: 'save_workspace', options: {} }], up: [] },
+    ],
     feedbacks: [
+      // Eerst dirty (amber UNSAVED), daarna recently_saved als laatste
+      // override (groene SAVED-flash). Volgorde matters: latere feedback
+      // wint visueel.
       {
         feedbackId: 'workspace_dirty',
         options: {},
         style: {
           text: '$(livefire:workspace_name)\\n*UNSAVED*',
           bgcolor: combineRgb(170, 110, 30),
+          color: combineRgb(255, 255, 255),
+        },
+      },
+      {
+        feedbackId: 'recently_saved',
+        options: {},
+        style: {
+          text: '$(livefire:workspace_name)\\nSAVED',
+          bgcolor: combineRgb(40, 130, 60),
           color: combineRgb(255, 255, 255),
         },
       },

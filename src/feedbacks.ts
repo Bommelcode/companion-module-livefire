@@ -100,6 +100,28 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
       options: [],
       callback: () => self.state.connected === true,
     },
+    recently_saved: {
+      // Korte (1.5 s) flash na een save_workspace-actie. Werkt puur op
+      // module-state — geen liveFire-push nodig — want de operator wil
+      // direct visuele bevestiging dat de save is verzonden, ongeacht
+      // of liveFire 'm al heeft verwerkt. checkFeedbacks na 1.6 s clear't.
+      type: 'boolean',
+      name: 'Recently saved (1.5 s flash)',
+      description:
+        'Light up green for 1.5 s after the save_workspace action fires. ' +
+        'Add this as the LAST feedback on the workspace-tile so it ' +
+        'briefly shows SAVED and then falls back to the dirty-state.',
+      defaultStyle: {
+        bgcolor: combineRgb(40, 130, 60),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () => {
+        const last = Number(self.state.lastSaveActionMs ?? 0)
+        if (last === 0) return false
+        return Date.now() - last < 1500
+      },
+    },
     workspace_dirty: {
       type: 'boolean',
       name: 'Workspace has unsaved edits',

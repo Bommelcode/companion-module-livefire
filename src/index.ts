@@ -80,6 +80,9 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     workspaceDirty: false,
     showtimeLocked: false,
     livefireVersion: '',
+    /** Epoch-ms van de laatste save_workspace-actie. Drijft de
+     *  recently_saved-feedback (1.5 s groene flash). 0 = nooit gesaved. */
+    lastSaveActionMs: 0,
     /** True zodra we recent (binnen HEARTBEAT_TIMEOUT_MS) een feedback-
      *  push uit liveFire hebben gezien. UDP zelf is connectionless dus
      *  je kunt 't niet aan de socket zien — alleen aan de heartbeat. */
