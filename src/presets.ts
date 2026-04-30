@@ -405,13 +405,14 @@ export function buildPresets(): CompanionPresetDefinitions {
     category: 'Status',
     name: 'Build / version banner',
     style: {
-      // Compacte twee-regels: liveFire-versie boven, module-versie onder.
-      // Beide via variabelen zodat een upgrade aan beide kanten meteen
-      // zichtbaar is.
-      text: 'lF $(livefire:livefire_version)\\nmod $(livefire:module_version)',
+      // Twee regels: app + module-versie. Geen "lF"-prefix want kleine
+      // l vs hoofdletter I is op het Stream Deck-LCD niet te onderscheiden.
+      // Size 14 zodat beide regels los leesbaar zijn op 72px hoog.
+      text: 'liveFire\\n$(livefire:livefire_version)\\n\\nmod $(livefire:module_version)',
       size: '7',
       bgcolor: combineRgb(20, 20, 20),
-      color: combineRgb(140, 140, 140),
+      color: combineRgb(180, 180, 180),
+      alignment: 'center:center' as const,
     },
     steps: [{ down: [], up: [] }],
     feedbacks: [],
