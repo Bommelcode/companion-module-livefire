@@ -5,6 +5,7 @@
  */
 import type { CompanionActionDefinitions } from '@companion-module/base'
 import { spawn } from 'child_process'
+import * as path from 'path'
 
 export function buildActions(self: any): CompanionActionDefinitions {
   return {
@@ -96,14 +97,34 @@ export function buildActions(self: any): CompanionActionDefinitions {
         if (tokens.length === 0) return
         const program = tokens[0]
         const args = tokens.slice(1)
+        // Werkdirectory afleiden: bij een venv-layout (..\.venv\Scripts\
+        // python.exe) zetten we cwd op de project-root zodat `python -m
+        // livefire` het livefire-package vindt in sys.path. Companion
+        // anders draait z'n cwd op z'n eigen install-dir, en dan crasht
+        // Python met ModuleNotFoundError direct na 't openen.
+        let cwd: string | undefined
+        const programDir = path.dirname(program)
+        const venvDir = path.dirname(programDir)
+        if (
+          /python(\.exe)?$/i.test(path.basename(program))
+          && path.basename(programDir).toLowerCase() === 'scripts'
+          && path.basename(venvDir).toLowerCase().includes('venv')
+        ) {
+          cwd = path.dirname(venvDir)
+        }
         try {
           const child = spawn(program, args, {
+            cwd,
             detached: true,
             stdio: 'ignore',
             windowsHide: false,
           })
           child.unref()
-          self.log('info', `launch_livefire spawned: ${program} ${args.join(' ')}`)
+          self.log(
+            'info',
+            `launch_livefire spawned: ${program} ${args.join(' ')}` +
+            (cwd ? ` (cwd=${cwd})` : ''),
+          )
         } catch (e) {
           self.log('error', `launch_livefire failed: ${e}`)
         }

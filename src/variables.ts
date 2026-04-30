@@ -13,7 +13,7 @@ export const MAX_CUE_NAMES = 32
 export const FIRE_BANK_SIZE = 16
 // Wordt mee-gebumpd met package.json bij elke release. Module gebruikt
 // 'm voor de version-banner-tile op de homescreen.
-const MODULE_VERSION = '0.2.14'
+const MODULE_VERSION = '0.2.15'
 
 export function buildVariables(): CompanionVariableDefinition[] {
   const vars: CompanionVariableDefinition[] = [
