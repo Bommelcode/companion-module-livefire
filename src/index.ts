@@ -50,6 +50,7 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     remaining: 0,
     remainingLabel: '',
     countdownActive: false,
+    elapsed: 0,
     cueStates: new Map<string, string>(),
     cueNames: new Map<string, string>(),
     cueTypes: new Map<string, string>(),
@@ -217,6 +218,8 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       this.state.remainingLabel = String(args[0] ?? '')
     } else if (address === '/livefire/countdown_active') {
       this.state.countdownActive = Number(args[0] ?? 0) !== 0
+    } else if (address === '/livefire/elapsed') {
+      this.state.elapsed = Number(args[0] ?? 0)
     } else if (address === '/livefire/cuecount') {
       this.state.cueCount = Number(args[0] ?? 0)
     } else if (address.startsWith('/livefire/cue/')) {

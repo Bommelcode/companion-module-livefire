@@ -35,6 +35,23 @@ export function buildVariables(): CompanionVariableDefinition[] {
       variableId: 'remaining_tenths',
       name: 'Remaining tenths-of-a-second, single digit (split-display tile 3 of 3)',
     },
+    { variableId: 'elapsed', name: 'Elapsed seconds of the playing cue (raw)' },
+    {
+      variableId: 'elapsed_formatted',
+      name: 'Elapsed time formatted (m:ss / s.s)',
+    },
+    {
+      variableId: 'elapsed_min',
+      name: 'Elapsed minutes (split-display tile 1 of 3)',
+    },
+    {
+      variableId: 'elapsed_sec',
+      name: 'Elapsed seconds, zero-padded (split-display tile 2 of 3)',
+    },
+    {
+      variableId: 'elapsed_tenths',
+      name: 'Elapsed tenths-of-a-second, single digit (split-display tile 3 of 3)',
+    },
     {
       variableId: 'remaining_label',
       name: 'Name of the cue driving the countdown (= now playing)',
@@ -85,6 +102,12 @@ export function applySnapshotToVariables(self: any): void {
   const minutes = Math.floor(absSec / 60)
   const seconds = Math.floor(absSec % 60)
   const tenths = Math.floor((absSec - Math.floor(absSec)) * 10) % 10
+  // Elapsed-zijde — zelfde split-recept maar dan oplopend (geen sign).
+  const elapsed = Number(self.state.elapsed ?? 0)
+  const elapsedAbs = Math.abs(elapsed)
+  const elMin = Math.floor(elapsedAbs / 60)
+  const elSec = Math.floor(elapsedAbs % 60)
+  const elTen = Math.floor((elapsedAbs - Math.floor(elapsedAbs)) * 10) % 10
   const values: Record<string, string | number> = {
     playhead: self.state.playhead,
     playhead_total: self.state.playheadTotal,
@@ -95,6 +118,11 @@ export function applySnapshotToVariables(self: any): void {
     remaining_min: `${sign}${minutes}`,
     remaining_sec: seconds.toString().padStart(2, '0'),
     remaining_tenths: tenths.toString(),
+    elapsed: elapsed.toFixed(1),
+    elapsed_formatted: formatRemaining(elapsedAbs),  // hergebruikt format-fn
+    elapsed_min: elMin.toString(),
+    elapsed_sec: elSec.toString().padStart(2, '0'),
+    elapsed_tenths: elTen.toString(),
     remaining_label: self.state.remainingLabel,
     cuecount: self.state.cueCount,
     connected: self.state.connected ? 1 : 0,

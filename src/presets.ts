@@ -175,6 +175,60 @@ export function buildPresets(): CompanionPresetDefinitions {
     feedbacks: splitCountdownFeedback,
   }
 
+  // Elapsed-zijde: drie tegels die de oplopende tijd van de spelende
+  // cue tonen. Zelfde structuur als remaining maar dan groen-getint
+  // bij has_active (in plaats van oranje countdown_active) — visueel
+  // onderscheid tussen "wat is gepasseerd" en "wat resteert".
+  const splitElapsedFeedback = [
+    {
+      feedbackId: 'has_active',
+      options: {},
+      style: {
+        bgcolor: combineRgb(40, 80, 50),
+        color: combineRgb(180, 220, 180),
+      },
+    },
+  ]
+  presets['elapsed_split_min'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Elapsed — minutes (split tile 1/3)',
+    style: {
+      text: '$(livefire:elapsed_min)',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitElapsedFeedback,
+  }
+  presets['elapsed_split_sec'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Elapsed — seconds (split tile 2/3)',
+    style: {
+      text: '$(livefire:elapsed_sec)',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitElapsedFeedback,
+  }
+  presets['elapsed_split_tenths'] = {
+    type: 'button',
+    category: 'Status',
+    name: 'Elapsed — tenths (split tile 3/3)',
+    style: {
+      text: '$(livefire:elapsed_tenths)',
+      size: 'auto',
+      bgcolor: COLORS.info.bg,
+      color: COLORS.info.fg,
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: splitElapsedFeedback,
+  }
+
   presets['active_count'] = {
     type: 'button',
     category: 'Status',
