@@ -643,5 +643,196 @@ export function buildPresets(): CompanionPresetDefinitions {
     }
   }
 
+  // ---- Cart Wall — Pads -----------------------------------------------
+  // 24 presets, één per pad-slot in de actieve cart. Layout-suggestie op
+  // 'n Stream Deck XL: pads 1..8 = top row, 9..16 = mid, 17..24 = bottom.
+  // De label/kleur/state komen via $(livefire:cart_pad_<n>_*) variables —
+  // dus je hoeft per cart niet handmatig te configureren, mits 't liveFire
+  // Cart Wall-venster ooit geopend is na de OSC-verbinding (anders
+  // pusht liveFire nog niets om bandbreedte te sparen).
+  for (let n = 1; n <= 24; n++) {
+    presets[`cart_pad_${n}`] = {
+      type: 'button',
+      category: 'Cart Wall — Pads',
+      name: `Pad ${n}`,
+      style: {
+        text: `$(livefire:cart_pad_${n}_label)`,
+        size: '14',
+        bgcolor: combineRgb(30, 30, 30),
+        color: combineRgb(255, 255, 255),
+      },
+      steps: [
+        {
+          down: [{ actionId: 'cart_fire_pad', options: { pad: n } }],
+          up: [],
+        },
+      ],
+      feedbacks: [
+        // 1) Apply de cue-color als achtergrond (advanced feedback).
+        { feedbackId: 'cart_pad_color', options: { pad: n } },
+        // 2) Highlight wanneer running.
+        {
+          feedbackId: 'cart_pad_running',
+          options: { pad: n },
+          style: {
+            bgcolor: combineRgb(255, 255, 255),
+            color: combineRgb(0, 0, 0),
+          },
+        },
+        // 3) Dim wanneer unbound — TEKST overschrijven naar "(unbound)"
+        // zodat lege slots herkenbaar zijn ondanks de "ghost"-styling.
+        {
+          feedbackId: 'cart_pad_unbound',
+          options: { pad: n },
+          style: {
+            text: '(unbound)',
+            bgcolor: combineRgb(20, 20, 20),
+            color: combineRgb(80, 80, 80),
+          },
+        },
+      ],
+    }
+  }
+
+  // ---- Cart Wall — Controls -------------------------------------------
+  // 8 presets — exacte mapping op de onderste rij van 'n Stream Deck XL.
+
+  presets['cart_ctrl_go'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'GO',
+    style: {
+      text: '▶ GO',
+      size: '24',
+      bgcolor: combineRgb(46, 125, 50),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'go', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_stop_all'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'STOP ALL',
+    style: {
+      text: '■ STOP\\nALL',
+      size: '18',
+      bgcolor: combineRgb(183, 28, 28),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'stop_all', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_pause'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Pause / Resume',
+    style: {
+      text: '⏸ PAUSE',
+      size: '18',
+      bgcolor: combineRgb(60, 60, 60),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'pause_toggle', options: {} }], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'paused_state',
+        options: {},
+        style: {
+          text: '▶ RESUME',
+          bgcolor: combineRgb(255, 140, 0),
+          color: combineRgb(0, 0, 0),
+        },
+      },
+    ],
+  }
+
+  presets['cart_ctrl_prev_cue'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Previous cue',
+    style: {
+      text: '◀ Prev\\ncue',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'playhead_prev', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_next_cue'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Next cue',
+    style: {
+      text: 'Next\\ncue ▶',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'playhead_next', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_prev_cart'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Previous cart',
+    style: {
+      text: '◀◀ Prev\\ncart',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'cart_prev', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_next_cart'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Next cart',
+    style: {
+      text: 'Next\\ncart ▶▶',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'cart_next', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  presets['cart_ctrl_close'] = {
+    type: 'button',
+    category: 'Cart Wall — Controls',
+    name: 'Close Cart Wall',
+    style: {
+      text: '✕ Close',
+      size: '18',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'cart_close', options: {} }], up: [] }],
+    feedbacks: [],
+  }
+
+  // ---- Cart Wall — Header status --------------------------------------
+  presets['cart_header'] = {
+    type: 'button',
+    category: 'Cart Wall — Status',
+    name: 'Active cart name',
+    style: {
+      text: '$(livefire:cart_active_name)',
+      size: '14',
+      bgcolor: combineRgb(35, 35, 35),
+      color: combineRgb(225, 225, 225),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  }
+
   return presets
 }

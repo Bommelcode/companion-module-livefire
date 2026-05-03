@@ -200,5 +200,107 @@ export function buildActions(self: any): CompanionActionDefinitions {
         self.setFireBankOffset(offset)
       },
     },
+
+    // ---- Pause / Resume (liveFire 0.5.2+) ----------------------------
+
+    pause_toggle: {
+      name: 'Pause / Resume (toggle)',
+      description:
+        'Freeze or resume all running cues without stopping them — ' +
+        'audio holds at its current sample, action_duration clock is ' +
+        'frozen. Same as Ctrl+Space in liveFire.',
+      options: [],
+      callback: () => self.osc?.send('/livefire/pause'),
+    },
+    pause_set: {
+      name: 'Pause / Resume (explicit)',
+      description: 'Force pause or resume regardless of current state.',
+      options: [
+        {
+          type: 'dropdown',
+          id: 'paused',
+          label: 'State',
+          default: '1',
+          choices: [
+            { id: '1', label: 'Pause' },
+            { id: '0', label: 'Resume' },
+          ],
+        },
+      ],
+      callback: (event) => {
+        const v = Number(event.options.paused ?? 1)
+        self.osc?.send('/livefire/pause', [v])
+      },
+    },
+
+    // ---- Cart Wall (liveFire 0.5.2+) ---------------------------------
+    // Cart Wall = soundboard view. Pads zijn child-cues van een Group-
+    // cue met group_mode='cart'. Indices in pad-fire zijn 1-based en
+    // matchen de 8×3-grid in liveFire (1..8 = top, 9..16 = mid, 17..24
+    // = bottom). Een Stream Deck XL leent zich precies hiervoor:
+    // bovenste 3 rijen = pads, onderste rij = control-row.
+
+    cart_open: {
+      name: 'Cart Wall — Open window',
+      description:
+        'Open the Cart Wall window in liveFire. Defaults to the first ' +
+        'Cart cue in the workspace; use Cart: select index / next / prev ' +
+        'to switch.',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/open'),
+    },
+    cart_close: {
+      name: 'Cart Wall — Close window',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/close'),
+    },
+    cart_select_index: {
+      name: 'Cart Wall — Select cart by index',
+      description: 'Switch to the n-th Cart cue in the workspace (0-based).',
+      options: [
+        {
+          type: 'number',
+          id: 'index',
+          label: 'Cart index (0-based)',
+          default: 0,
+          min: 0,
+          max: 99,
+        },
+      ],
+      callback: (event) => {
+        const idx = Number(event.options.index ?? 0)
+        self.osc?.send('/livefire/cart/select_index', [idx])
+      },
+    },
+    cart_next: {
+      name: 'Cart Wall — Next cart',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/next'),
+    },
+    cart_prev: {
+      name: 'Cart Wall — Previous cart',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/prev'),
+    },
+    cart_fire_pad: {
+      name: 'Cart Wall — Fire pad',
+      description:
+        'Fire pad #n (1-based) in the active cart. Pad indices match the ' +
+        'liveFire grid: 1..8 = top row, 9..16 = middle, 17..24 = bottom.',
+      options: [
+        {
+          type: 'number',
+          id: 'pad',
+          label: 'Pad number (1-24)',
+          default: 1,
+          min: 1,
+          max: 24,
+        },
+      ],
+      callback: (event) => {
+        const pad = Number(event.options.pad ?? 1)
+        self.osc?.send(`/livefire/cart/pad/${pad}`)
+      },
+    },
   }
 }

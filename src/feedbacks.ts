@@ -215,5 +215,109 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
       callback: (feedback) =>
         Number(self.state.fireBankOffset ?? 0) === Number(feedback.options.offset),
     },
+
+    // ---- Pause / Cart Wall (liveFire 0.5.2+) -------------------------
+
+    paused_state: {
+      type: 'boolean',
+      name: 'Show is paused',
+      description:
+        'Light up when liveFire is in paused state (any cue frozen via ' +
+        'Ctrl+Space or /livefire/pause). Pair with the pause_toggle ' +
+        'action so one button toggles + reflects state.',
+      defaultStyle: {
+        bgcolor: combineRgb(255, 140, 0),
+        color: combineRgb(0, 0, 0),
+      },
+      options: [],
+      callback: () => self.state.paused === true,
+    },
+    cart_pad_running: {
+      type: 'boolean',
+      name: 'Cart pad is running',
+      description:
+        'Light up when the cue assigned to this cart pad is currently ' +
+        'playing. Use to pulse the SFX-tile while the sound fires.',
+      defaultStyle: {
+        bgcolor: combineRgb(255, 255, 255),
+        color: combineRgb(0, 0, 0),
+      },
+      options: [
+        {
+          type: 'number',
+          id: 'pad',
+          label: 'Pad number (1-24)',
+          default: 1,
+          min: 1,
+          max: 24,
+        },
+      ],
+      callback: (feedback) => {
+        const pad = Number(feedback.options.pad ?? 1)
+        return self.state.cartPadStates.get(pad) === 'running'
+      },
+    },
+    cart_pad_unbound: {
+      type: 'boolean',
+      name: 'Cart pad is unbound',
+      description:
+        'True when there is no cue assigned to this pad slot in the active ' +
+        'cart. Use a dim style so the operator sees the slot is empty ' +
+        'without it disappearing.',
+      defaultStyle: {
+        bgcolor: combineRgb(20, 20, 20),
+        color: combineRgb(80, 80, 80),
+      },
+      options: [
+        {
+          type: 'number',
+          id: 'pad',
+          label: 'Pad number (1-24)',
+          default: 1,
+          min: 1,
+          max: 24,
+        },
+      ],
+      callback: (feedback) => {
+        const pad = Number(feedback.options.pad ?? 1)
+        const label = self.state.cartPadLabels.get(pad)
+        return !label || label === ''
+      },
+    },
+    cart_pad_color: {
+      // Advanced — kleurt de tile met de cue.color uit liveFire. Reuse de
+      // luma-text-pick van cue_color zodat 't kleurschema consistent voelt.
+      type: 'advanced',
+      name: 'Cart pad — apply cue color',
+      description:
+        "Color the tile background with the cue color of the pad. Falls " +
+        'back to a neutral dark color if the cue has no color set.',
+      options: [
+        {
+          type: 'number',
+          id: 'pad',
+          label: 'Pad number (1-24)',
+          default: 1,
+          min: 1,
+          max: 24,
+        },
+      ],
+      callback: (feedback) => {
+        const pad = Number(feedback.options.pad ?? 1)
+        const hex = self.state.cartPadColors.get(pad)
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) {
+          return { bgcolor: combineRgb(30, 30, 30) }
+        }
+        const m = hex.match(/^#([0-9a-fA-F]{6})$/)
+        if (!m) return { bgcolor: combineRgb(30, 30, 30) }
+        const num = parseInt(m[1], 16)
+        const r = (num >> 16) & 0xff
+        const g = (num >> 8) & 0xff
+        const b = num & 0xff
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b
+        const txt = luma < 140 ? combineRgb(255, 255, 255) : combineRgb(0, 0, 0)
+        return { bgcolor: combineRgb(r, g, b), color: txt }
+      },
+    },
   }
 }

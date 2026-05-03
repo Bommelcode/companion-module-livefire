@@ -11,9 +11,10 @@ import type { CompanionVariableDefinition } from '@companion-module/base'
 
 export const MAX_CUE_NAMES = 32
 export const FIRE_BANK_SIZE = 16
+export const CART_PAD_COUNT = 24
 // Wordt mee-gebumpd met package.json bij elke release. Module gebruikt
 // 'm voor de version-banner-tile op de homescreen.
-const MODULE_VERSION = '0.2.19'
+const MODULE_VERSION = '0.3.0'
 
 export function buildVariables(): CompanionVariableDefinition[] {
   const vars: CompanionVariableDefinition[] = [
@@ -106,6 +107,29 @@ export function buildVariables(): CompanionVariableDefinition[] {
     { variableId: 'clock_m2', name: 'System clock — second digit of minutes (0..9)' },
     { variableId: 'clock_s1', name: 'System clock — first digit of seconds (0..5)' },
     { variableId: 'clock_s2', name: 'System clock — second digit of seconds (0..9)' },
+    // Pause-state — voor de pause/resume-tile.
+    {
+      variableId: 'paused',
+      name: 'Show is paused (1) or playing (0)',
+    },
+    // Cart Wall — actieve cart + pad-meta. liveFire pusht deze pas zodra
+    // 't Cart Wall-venster ooit geopend is; voor die tijd zijn ze leeg.
+    {
+      variableId: 'cart_active_id',
+      name: 'Active cart cue-id (uuid)',
+    },
+    {
+      variableId: 'cart_active_name',
+      name: 'Active cart name (e.g. "SFX Act 1")',
+    },
+    {
+      variableId: 'cart_active_index',
+      name: 'Active cart index in cart-list (0-based, -1 = none)',
+    },
+    {
+      variableId: 'cart_count',
+      name: 'Number of Cart cues in the workspace',
+    },
   ]
   // Statische cue_<n>_name + cue_<n>_color serie — Companion vereist dat
   // we alle variabelen vooraf bekend maken; runtime values worden gezet
@@ -135,6 +159,29 @@ export function buildVariables(): CompanionVariableDefinition[] {
       {
         variableId: `fire_bank_${i}_name`,
         name: `Bank slot ${i} → name of the cue it points at`,
+      },
+    )
+  }
+  // Cart-Wall pads: 24 slots × 4 velden (label / type / color / state).
+  // Companion-tegels lezen deze direct via $(livefire:cart_pad_<n>_label)
+  // etc. zodat 'n SFX-tegel automatisch z'n naam toont.
+  for (let n = 1; n <= CART_PAD_COUNT; n++) {
+    vars.push(
+      {
+        variableId: `cart_pad_${n}_label`,
+        name: `Cart pad ${n} — label ("nr name")`,
+      },
+      {
+        variableId: `cart_pad_${n}_type`,
+        name: `Cart pad ${n} — cue type (Audio / Video / ...)`,
+      },
+      {
+        variableId: `cart_pad_${n}_color`,
+        name: `Cart pad ${n} — cue color (hex, e.g. "#3aa2e6")`,
+      },
+      {
+        variableId: `cart_pad_${n}_state`,
+        name: `Cart pad ${n} — runtime state (idle / running / finished)`,
       },
     )
   }
@@ -207,6 +254,22 @@ export function applySnapshotToVariables(self: any): void {
     const target = offset + i
     values[`fire_bank_${i}`] = String(target)
     values[`fire_bank_${i}_name`] = self.state.cueNames.get(String(target)) ?? ''
+  }
+  // Pause-state + Cart Wall.
+  values['paused'] = self.state.paused ? 1 : 0
+  values['cart_active_id'] = self.state.cartActiveId ?? ''
+  values['cart_active_name'] = self.state.cartActiveName ?? ''
+  values['cart_active_index'] = String(
+    self.state.cartActiveIndex ?? -1,
+  )
+  values['cart_count'] = String(self.state.cartCount ?? 0)
+  // Pad-meta — leeg slot blijft leeg, anders blijft 'n stale label
+  // hangen wanneer de operator naar een cart switcht met minder pads.
+  for (let n = 1; n <= CART_PAD_COUNT; n++) {
+    values[`cart_pad_${n}_label`] = self.state.cartPadLabels?.get(n) ?? ''
+    values[`cart_pad_${n}_type`] = self.state.cartPadTypes?.get(n) ?? ''
+    values[`cart_pad_${n}_color`] = self.state.cartPadColors?.get(n) ?? ''
+    values[`cart_pad_${n}_state`] = self.state.cartPadStates?.get(n) ?? 'idle'
   }
   self.setVariableValues(values)
 }

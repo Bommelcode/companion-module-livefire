@@ -92,6 +92,22 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     /** Operator-controlled fire-bank offset. 0 = bank slots 1..16 mapping
      *  naar cues 1..16; 16 = slots → 17..32; etc. */
     fireBankOffset: 0,
+    /** Show-pause state — gevoed door /livefire/paused (0/1). Pause-tile
+     *  toggle't z'n eigen kleur op deze flag. */
+    paused: false,
+    /** Cart Wall-state. Pas gevuld zodra de operator 't venster ooit heeft
+     *  geopend — daarvoor pusht liveFire lege strings (om bandbreedte te
+     *  sparen). */
+    cartActiveId: '',
+    cartActiveName: '',
+    cartActiveIndex: -1,
+    cartCount: 0,
+    /** Per pad-slot (1..24) z'n meta. Numerieke key zodat we 'm 1-op-1
+     *  kunnen gebruiken in feedbacks zonder string-conversie. */
+    cartPadLabels: new Map<number, string>(),
+    cartPadTypes: new Map<number, string>(),
+    cartPadColors: new Map<number, string>(),
+    cartPadStates: new Map<number, string>(),
   }
 
   async init(config: LivefireConfig): Promise<void> {
@@ -293,6 +309,43 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       }
     } else if (address === '/livefire/version') {
       this.state.livefireVersion = String(args[0] ?? '')
+    } else if (address === '/livefire/paused') {
+      const p = Number(args[0] ?? 0) !== 0
+      if (p !== this.state.paused) {
+        this.state.paused = p
+        this.checkFeedbacks('paused_state')
+      }
+    } else if (address === '/livefire/cart/active_id') {
+      this.state.cartActiveId = String(args[0] ?? '')
+    } else if (address === '/livefire/cart/active_name') {
+      this.state.cartActiveName = String(args[0] ?? '')
+    } else if (address === '/livefire/cart/active_index') {
+      this.state.cartActiveIndex = Number(args[0] ?? -1)
+    } else if (address === '/livefire/cart/count') {
+      this.state.cartCount = Number(args[0] ?? 0)
+    } else if (address.startsWith('/livefire/cart/pad/')) {
+      // /livefire/cart/pad/<n>/{label,type,color,state}
+      const rest = address.substring('/livefire/cart/pad/'.length)
+      const slash = rest.indexOf('/')
+      if (slash <= 0) return
+      const padN = Number(rest.substring(0, slash))
+      if (!Number.isFinite(padN) || padN < 1 || padN > 24) return
+      const field = rest.substring(slash + 1)
+      const value = String(args[0] ?? '')
+      if (field === 'label') {
+        this.state.cartPadLabels.set(padN, value)
+      } else if (field === 'type') {
+        this.state.cartPadTypes.set(padN, value)
+      } else if (field === 'color') {
+        this.state.cartPadColors.set(padN, value)
+      } else if (field === 'state') {
+        this.state.cartPadStates.set(padN, value)
+      }
+      // Pad-meta wijziging raakt drie feedbacks — re-evalueren zodat
+      // tegels direct mee veranderen op rename / fire / disarm.
+      this.checkFeedbacks(
+        'cart_pad_running', 'cart_pad_unbound', 'cart_pad_color',
+      )
     } else if (address === '/livefire/cuecount') {
       this.state.cueCount = Number(args[0] ?? 0)
       // /cuecount markeert 't begin van een full cuelist-rebroadcast.
