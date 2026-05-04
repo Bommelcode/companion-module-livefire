@@ -286,17 +286,17 @@ export function buildActions(self: any): CompanionActionDefinitions {
       name: 'Cart Wall — Fire pad',
       description:
         'Fire pad #n (1-based) in the active cart. Pad indices match the ' +
-        'liveFire grid: 1..8 = top row, 9..16 = middle, 17..24 = bottom. ' +
+        'liveFire grid: 1..7 = top row, 8..14 = middle, 15..21 = bottom. ' +
         'When the cart spans multiple pages this fires the pad on the ' +
         'currently visible page (use cart_page_* actions to switch pages).',
       options: [
         {
           type: 'number',
           id: 'pad',
-          label: 'Pad number (1-24)',
+          label: 'Pad number (1-21)',
           default: 1,
           min: 1,
-          max: 24,
+          max: 21,
         },
       ],
       callback: (event) => {

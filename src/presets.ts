@@ -650,7 +650,7 @@ export function buildPresets(): CompanionPresetDefinitions {
   // dus je hoeft per cart niet handmatig te configureren, mits 't liveFire
   // Cart Wall-venster ooit geopend is na de OSC-verbinding (anders
   // pusht liveFire nog niets om bandbreedte te sparen).
-  for (let n = 1; n <= 24; n++) {
+  for (let n = 1; n <= 21; n++) {
     presets[`cart_pad_${n}`] = {
       type: 'button',
       category: 'Cart Wall — Pads',

@@ -11,10 +11,13 @@ import type { CompanionVariableDefinition } from '@companion-module/base'
 
 export const MAX_CUE_NAMES = 32
 export const FIRE_BANK_SIZE = 16
-export const CART_PAD_COUNT = 24
+// 7×3 = 21 pads per pagina — match met liveFire's PADS_PER_PAGE.
+// Bovenste 3 rijen van een Stream Deck XL = pads, kolom 8 vrij voor
+// paging-controls, onderste rij voor GO/STOP/etc.
+export const CART_PAD_COUNT = 21
 // Wordt mee-gebumpd met package.json bij elke release. Module gebruikt
 // 'm voor de version-banner-tile op de homescreen.
-const MODULE_VERSION = '0.3.1'
+const MODULE_VERSION = '0.4.0'
 
 export function buildVariables(): CompanionVariableDefinition[] {
   const vars: CompanionVariableDefinition[] = [

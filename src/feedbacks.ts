@@ -246,10 +246,10 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
         {
           type: 'number',
           id: 'pad',
-          label: 'Pad number (1-24)',
+          label: 'Pad number (1-21)',
           default: 1,
           min: 1,
-          max: 24,
+          max: 21,
         },
       ],
       callback: (feedback) => {
@@ -272,10 +272,10 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
         {
           type: 'number',
           id: 'pad',
-          label: 'Pad number (1-24)',
+          label: 'Pad number (1-21)',
           default: 1,
           min: 1,
-          max: 24,
+          max: 21,
         },
       ],
       callback: (feedback) => {
@@ -348,10 +348,10 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
         {
           type: 'number',
           id: 'pad',
-          label: 'Pad number (1-24)',
+          label: 'Pad number (1-21)',
           default: 1,
           min: 1,
-          max: 24,
+          max: 21,
         },
       ],
       callback: (feedback) => {
