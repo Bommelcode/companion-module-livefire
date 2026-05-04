@@ -284,6 +284,58 @@ export function buildFeedbacks(self: any): CompanionFeedbackDefinitions {
         return !label || label === ''
       },
     },
+    cart_page_at: {
+      type: 'boolean',
+      name: 'Cart page is at value',
+      description:
+        'Light up when the active cart is on the given 1-based page. ' +
+        'Use on direct-page tiles ("go to page 2") so the active page ' +
+        'is highlighted.',
+      defaultStyle: {
+        bgcolor: combineRgb(220, 130, 30),
+        color: combineRgb(0, 0, 0),
+      },
+      options: [
+        {
+          type: 'number',
+          id: 'page',
+          label: 'Page (1-based)',
+          default: 1,
+          min: 1,
+          max: 99,
+        },
+      ],
+      callback: (feedback) =>
+        Number(self.state.cartPageCurrent ?? 1) === Number(feedback.options.page),
+    },
+    cart_page_has_next: {
+      type: 'boolean',
+      name: 'Cart has a next page',
+      description:
+        'True when there is a page after the current one. Use on the ' +
+        'Next-page tile to dim it when the operator is on the last page.',
+      defaultStyle: {
+        bgcolor: combineRgb(40, 40, 40),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () =>
+        Number(self.state.cartPageCurrent ?? 1) <
+        Number(self.state.cartPageTotal ?? 1),
+    },
+    cart_page_has_prev: {
+      type: 'boolean',
+      name: 'Cart has a previous page',
+      description:
+        'True when there is a page before the current one. Use on the ' +
+        'Prev-page tile to dim it on page 1.',
+      defaultStyle: {
+        bgcolor: combineRgb(40, 40, 40),
+        color: combineRgb(255, 255, 255),
+      },
+      options: [],
+      callback: () => Number(self.state.cartPageCurrent ?? 1) > 1,
+    },
     cart_pad_color: {
       // Advanced — kleurt de tile met de cue.color uit liveFire. Reuse de
       // luma-text-pick van cue_color zodat 't kleurschema consistent voelt.

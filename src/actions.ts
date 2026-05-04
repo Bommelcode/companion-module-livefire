@@ -286,7 +286,9 @@ export function buildActions(self: any): CompanionActionDefinitions {
       name: 'Cart Wall — Fire pad',
       description:
         'Fire pad #n (1-based) in the active cart. Pad indices match the ' +
-        'liveFire grid: 1..8 = top row, 9..16 = middle, 17..24 = bottom.',
+        'liveFire grid: 1..8 = top row, 9..16 = middle, 17..24 = bottom. ' +
+        'When the cart spans multiple pages this fires the pad on the ' +
+        'currently visible page (use cart_page_* actions to switch pages).',
       options: [
         {
           type: 'number',
@@ -300,6 +302,40 @@ export function buildActions(self: any): CompanionActionDefinitions {
       callback: (event) => {
         const pad = Number(event.options.pad ?? 1)
         self.osc?.send(`/livefire/cart/pad/${pad}`)
+      },
+    },
+
+    // ---- Cart Wall paging (liveFire 0.5.2+) ---------------------------
+    // Voor carts met >24 pads: paginering. /pad/<n> blijft 1..24, dus
+    // dezelfde Stream Deck-tegels werken op elke pagina; alleen de
+    // pad-labels en colors via $(livefire:cart_pad_<n>_*) updaten mee.
+
+    cart_page_next: {
+      name: 'Cart Wall — Next page',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/page/next'),
+    },
+    cart_page_prev: {
+      name: 'Cart Wall — Previous page',
+      options: [],
+      callback: () => self.osc?.send('/livefire/cart/page/prev'),
+    },
+    cart_page_set: {
+      name: 'Cart Wall — Go to page',
+      description: 'Switch to page n (1-based). Out-of-range gets clamped.',
+      options: [
+        {
+          type: 'number',
+          id: 'page',
+          label: 'Page number (1-based)',
+          default: 1,
+          min: 1,
+          max: 99,
+        },
+      ],
+      callback: (event) => {
+        const page = Number(event.options.page ?? 1)
+        self.osc?.send('/livefire/cart/page/set', [page])
       },
     },
   }

@@ -834,5 +834,110 @@ export function buildPresets(): CompanionPresetDefinitions {
     feedbacks: [],
   }
 
+  // ---- Cart Wall — Paging --------------------------------------------
+  // Voor carts met >24 pads. Pad-tegels (cart_pad_1..24) blijven werken
+  // op elke pagina; deze knoppen zijn voor 't switchen tussen pagina's.
+
+  presets['cart_page_prev'] = {
+    type: 'button',
+    category: 'Cart Wall — Paging',
+    name: 'Previous page',
+    style: {
+      text: '◀  Page',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'cart_page_prev', options: {} }], up: [] }],
+    feedbacks: [
+      // Dim wanneer er geen vorige pagina meer is.
+      {
+        feedbackId: 'cart_page_has_prev',
+        options: {},
+        // Inverteren: 'has_prev = true' = volle kleur, false = dim. Maar
+        // de feedback callback returnt true wanneer 'r een prev is — dus
+        // zonder verandering. Dimmen via 'n style die alléén actief is
+        // bij has_prev=false zou een tweede inverse-feedback nodig
+        // hebben; in plaats daarvan laten we Companion's defaultStyle
+        // staan en geven via 'n separate feedback hieronder de "active"
+        // kleur.
+        style: {
+          bgcolor: combineRgb(60, 60, 60),
+          color: combineRgb(255, 255, 255),
+        },
+      },
+    ],
+  }
+
+  presets['cart_page_next'] = {
+    type: 'button',
+    category: 'Cart Wall — Paging',
+    name: 'Next page',
+    style: {
+      text: 'Page  ▶',
+      size: '14',
+      bgcolor: combineRgb(40, 40, 40),
+      color: combineRgb(255, 255, 255),
+    },
+    steps: [{ down: [{ actionId: 'cart_page_next', options: {} }], up: [] }],
+    feedbacks: [
+      {
+        feedbackId: 'cart_page_has_next',
+        options: {},
+        style: {
+          bgcolor: combineRgb(60, 60, 60),
+          color: combineRgb(255, 255, 255),
+        },
+      },
+    ],
+  }
+
+  presets['cart_page_indicator'] = {
+    type: 'button',
+    category: 'Cart Wall — Paging',
+    name: 'Page indicator (X / Y)',
+    style: {
+      text: 'Page\\n$(livefire:cart_page_current)/$(livefire:cart_page_total)',
+      size: '14',
+      bgcolor: combineRgb(35, 35, 35),
+      color: combineRgb(225, 225, 225),
+    },
+    steps: [{ down: [], up: [] }],
+    feedbacks: [],
+  }
+
+  // 1..6 direct-page-tegels — voor carts die nooit groter dan 6×24=144
+  // pads worden. Iedere tegel switcht naar pagina N en licht oranje op
+  // wanneer 'm de actieve pagina is.
+  for (let pg = 1; pg <= 6; pg++) {
+    presets[`cart_page_${pg}`] = {
+      type: 'button',
+      category: 'Cart Wall — Paging',
+      name: `Go to page ${pg}`,
+      style: {
+        text: `Pg ${pg}`,
+        size: '18',
+        bgcolor: combineRgb(40, 40, 40),
+        color: combineRgb(255, 255, 255),
+      },
+      steps: [
+        {
+          down: [{ actionId: 'cart_page_set', options: { page: pg } }],
+          up: [],
+        },
+      ],
+      feedbacks: [
+        {
+          feedbackId: 'cart_page_at',
+          options: { page: pg },
+          style: {
+            bgcolor: combineRgb(220, 130, 30),
+            color: combineRgb(0, 0, 0),
+          },
+        },
+      ],
+    }
+  }
+
   return presets
 }

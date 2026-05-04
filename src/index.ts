@@ -102,6 +102,10 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
     cartActiveName: '',
     cartActiveIndex: -1,
     cartCount: 0,
+    /** Active cart page (1-based) en totaal. Gevoed door
+     *  /livefire/cart/page/current + /total. Bij <24 pads is total 1. */
+    cartPageCurrent: 1,
+    cartPageTotal: 1,
     /** Per pad-slot (1..24) z'n meta. Numerieke key zodat we 'm 1-op-1
      *  kunnen gebruiken in feedbacks zonder string-conversie. */
     cartPadLabels: new Map<number, string>(),
@@ -323,6 +327,20 @@ class LivefireInstance extends InstanceBase<LivefireConfig> {
       this.state.cartActiveIndex = Number(args[0] ?? -1)
     } else if (address === '/livefire/cart/count') {
       this.state.cartCount = Number(args[0] ?? 0)
+    } else if (address === '/livefire/cart/page/current') {
+      const cur = Number(args[0] ?? 1)
+      if (cur !== this.state.cartPageCurrent) {
+        this.state.cartPageCurrent = cur
+        this.checkFeedbacks(
+          'cart_page_at', 'cart_page_has_next', 'cart_page_has_prev',
+        )
+      }
+    } else if (address === '/livefire/cart/page/total') {
+      const tot = Number(args[0] ?? 1)
+      if (tot !== this.state.cartPageTotal) {
+        this.state.cartPageTotal = tot
+        this.checkFeedbacks('cart_page_has_next', 'cart_page_has_prev')
+      }
     } else if (address.startsWith('/livefire/cart/pad/')) {
       // /livefire/cart/pad/<n>/{label,type,color,state}
       const rest = address.substring('/livefire/cart/pad/'.length)

@@ -14,7 +14,7 @@ export const FIRE_BANK_SIZE = 16
 export const CART_PAD_COUNT = 24
 // Wordt mee-gebumpd met package.json bij elke release. Module gebruikt
 // 'm voor de version-banner-tile op de homescreen.
-const MODULE_VERSION = '0.3.0'
+const MODULE_VERSION = '0.3.1'
 
 export function buildVariables(): CompanionVariableDefinition[] {
   const vars: CompanionVariableDefinition[] = [
@@ -129,6 +129,15 @@ export function buildVariables(): CompanionVariableDefinition[] {
     {
       variableId: 'cart_count',
       name: 'Number of Cart cues in the workspace',
+    },
+    // Paging: voor carts met >24 pads.
+    {
+      variableId: 'cart_page_current',
+      name: 'Active cart page (1-based)',
+    },
+    {
+      variableId: 'cart_page_total',
+      name: 'Total pages in active cart',
     },
   ]
   // Statische cue_<n>_name + cue_<n>_color serie — Companion vereist dat
@@ -263,6 +272,8 @@ export function applySnapshotToVariables(self: any): void {
     self.state.cartActiveIndex ?? -1,
   )
   values['cart_count'] = String(self.state.cartCount ?? 0)
+  values['cart_page_current'] = String(self.state.cartPageCurrent ?? 1)
+  values['cart_page_total'] = String(self.state.cartPageTotal ?? 1)
   // Pad-meta — leeg slot blijft leeg, anders blijft 'n stale label
   // hangen wanneer de operator naar een cart switcht met minder pads.
   for (let n = 1; n <= CART_PAD_COUNT; n++) {
